@@ -46,7 +46,8 @@ contract Token {
         transparent_note::{TransparentNote, TransparentNoteMethods, TRANSPARENT_NOTE_LEN},
         token_note::{TokenNote, TokenNoteMethods, TOKEN_NOTE_LEN},
         balances_map::{BalancesMap},
-        safe_u120_serialization::{SafeU120SerializationMethods, SAFE_U120_SERIALIZED_LEN}
+        safe_u120_serialization::{SafeU120SerializationMethods, SAFE_U120_SERIALIZED_LEN},
+        escrow_note::{EscrowNote, EscrowNoteMethods, ESCROW_NOTE_LEN},
     };
     // docs:end::imports
 
@@ -66,12 +67,13 @@ contract Token {
         pending_shields: Set<TransparentNote, TRANSPARENT_NOTE_LEN>,
         // docs:end:storage_pending_shields
         public_balances: Map<PublicState<SafeU120, SAFE_U120_SERIALIZED_LEN>>,
+        escrows: Set<EscrowNote, ESCROW_NOTE_LEN>,
     }
     // docs:end:storage_struct
 
     // docs:start:storage_init
     impl Storage {
-        fn init(context: Context) -> pub Self {
+        fn init(context: Context) -> Self {
             Storage {
                 // docs:start:storage_admin_init
                 admin: PublicState::new(
@@ -113,6 +115,7 @@ contract Token {
                         )
                     },
                 ),
+                escrows: Set::new(context, 7, EscrowNoteMethods),
             }
         }
     }
@@ -353,6 +356,60 @@ contract Token {
         1
     }
     // docs:end:burn
+
+    #[aztec(private)]
+    fn something_escrow(
+        from: AztecAddress,
+        agent: AztecAddress,
+        amount: Field,
+        participants: [AztecAddress; 4],
+        nonce: Field,
+    ) -> Field {
+        if (from.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
+
+        // Remove the tokens from the user
+        let safe_amount = SafeU120::new(amount);
+        storage.balances.at(from).sub(safe_amount);
+
+        // create the EscrowNote
+        let mut escrow_note = EscrowNote::new(amount, agent, participants);
+        storage.escrows.insert(&mut escrow_note, true);
+
+        1
+    }
+
+    // Maybe we can remove this method and use it in the transfer method if we change to ValueNote
+    // Add the recipients into the valueNote
+    #[aztec(private)]
+    fn settle_escrow(agent: AztecAddress, recipient: AztecAddress, amount: Field, randomness: Field, nonce: Field) -> Field {
+        if (agent.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, agent);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
+
+        let escrows = storage.escrows;
+
+        // Filter the note
+        let options = NoteGetterOptions::new().select(0, amount).select(1, agent.address).select(2, randomness).set_limit(1);
+        let notes = escrows.get_notes(options);
+        let note = notes[0].unwrap_unchecked();
+
+        // Check the msg sender is the agent
+        assert(note.agent.address == agent.address, "msg sender is not the agent");
+
+        // Nullify the note
+        escrows.remove(note);
+
+        // Pay the recipient
+        storage.balances.at(recipient).add(SafeU120::new(amount));
+
+        1
+    }
 
     // docs:start:initialize
     #[aztec(public)]
