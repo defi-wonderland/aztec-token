@@ -32,6 +32,8 @@ contract Token {
         },
         types::address::{AztecAddress},
         selector::compute_selector,
+        log::emit_encrypted_log,
+        oracle::get_public_key::get_public_key,
     };
 
     // docs:start:import_authwit
@@ -378,7 +380,35 @@ contract Token {
 
         // create the EscrowNote
         let mut escrow_note = EscrowNote::new(amount, agent, participants);
-        storage.escrows.insert(&mut escrow_note, true);
+        storage.escrows.insert(&mut escrow_note, false);
+
+        // TODO: remove
+        let address_this = context.this_address();
+
+        emit_encrypted_log(
+            &mut context,
+            address_this,
+            7,
+            get_public_key(from.address),
+            escrow_note.serialize(),
+        ); 
+
+        emit_encrypted_log(
+            &mut context,
+            address_this,
+            7,
+            get_public_key(participants[0].address),
+            escrow_note.serialize(),
+        ); 
+
+        emit_encrypted_log(
+            &mut context,
+            address_this,
+            7,
+            get_public_key(agent.address),
+            escrow_note.serialize(),
+        ); 
+        //
 
         1
     }
@@ -398,24 +428,29 @@ contract Token {
         // Filter the note
         let options = NoteGetterOptions::new().select(0, amount).select(1, agent.address).select(2, randomness).set_limit(1);
         let notes = escrows.get_notes(options);
-        let note = notes[0].unwrap_unchecked();
+        
+        if(notes[0].is_some()) {
+            let note = notes[0].unwrap_unchecked();
 
-        // Check the msg sender is the agent
-        assert(note.agent.address == agent.address, "msg sender is not the agent");
+            // Check the msg sender is the agent
+            assert(note.agent.address == agent.address, "msg sender is not the agent");
 
-        // Nullify the note
-        // TODO: reverts with panicked at 'internal error: entered unreachable code: Cannot flatten a dynamic array'
-        // escrows.remove(note); 
+            // Nullify the note
+            escrows.remove(note); 
 
-        // Pay the recipient
-        storage.balances.at(recipient).add(SafeU120::new(amount));
+            // Pay the recipient
+            storage.balances.at(recipient).add(SafeU120::new(amount));
+        } else {
+            // TODO: is there a way to revert directly?
+            assert(false, "escrow does not exist");
+        }
 
         1
     }
 
-    unconstrained fn get_escrows() -> [Option<EscrowNote>; 10] {
+    unconstrained fn get_escrows(offset: u32) -> [Option<EscrowNote>; 10] {
         // TODO: add pagination
-        let options = NoteViewerOptions::new().set_offset(0);
+        let options = NoteViewerOptions::new().set_offset(offset);
         storage.escrows.view_notes(options)
     }
 

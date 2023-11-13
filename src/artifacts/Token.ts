@@ -109,8 +109,8 @@ export class TokenContract extends ContractBase {
     /** escrow(from: struct, agent: struct, amount: field, participants: array, nonce: field) */
     escrow: ((from: AztecAddressLike, agent: AztecAddressLike, amount: FieldLike, participants: AztecAddressLike[], nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** get_escrows() */
-    get_escrows: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** get_escrows(offset: integer) */
+    get_escrows: ((offset: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** is_minter(minter: struct) */
     is_minter: ((minter: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
