@@ -88,10 +88,10 @@ impl EscrowNote {
         let note_hash_for_nullify = compute_note_hash_for_read_or_nullify(EscrowNoteMethods, self);
         let nullifier_key = self.randomness;
 
-        dep::std::hash::pedersen([
+        pedersen_hash([
             note_hash_for_nullify,
             nullifier_key,
-        ])[0]
+        ], 0)
     }
 
     // docs:end:nullifier

@@ -404,7 +404,8 @@ contract Token {
         assert(note.agent.address == agent.address, "msg sender is not the agent");
 
         // Nullify the note
-        escrows.remove(note);
+        // TODO: reverts with panicked at 'internal error: entered unreachable code: Cannot flatten a dynamic array'
+        // escrows.remove(note); 
 
         // Pay the recipient
         storage.balances.at(recipient).add(SafeU120::new(amount));
@@ -497,12 +498,14 @@ contract Token {
     // Computes note hash and nullifier.
     // Note 1: Needs to be defined by every contract producing logs.
     // Note 2: Having it in all the contracts gives us the ability to compute the note hash and nullifier differently for different kind of notes.
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; TOKEN_NOTE_LEN]) -> [Field; 4] {
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; TOKEN_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         if (storage_slot == 5) {
-            note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, preimage)
+            note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, serialized_note)
+        } else if (storage_slot == 7) {
+            note_utils::compute_note_hash_and_nullifier(EscrowNoteMethods, note_header, serialized_note)
         } else {
-            note_utils::compute_note_hash_and_nullifier(TokenNoteMethods, note_header, preimage)
+            note_utils::compute_note_hash_and_nullifier(TokenNoteMethods, note_header, serialized_note)
         }
     }
     // docs:end:compute_note_hash_and_nullifier
