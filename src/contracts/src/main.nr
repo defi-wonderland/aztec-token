@@ -20,6 +20,7 @@ contract Token {
             note_getter_options::NoteGetterOptions,
             note_header::NoteHeader,
             utils as note_utils,
+            note_viewer_options::NoteViewerOptions
         },
         context::{PrivateContext, PublicContext, Context},
         hash::{compute_secret_hash},
@@ -358,7 +359,7 @@ contract Token {
     // docs:end:burn
 
     #[aztec(private)]
-    fn something_escrow(
+    fn escrow(
         from: AztecAddress,
         agent: AztecAddress,
         amount: Field,
@@ -409,6 +410,12 @@ contract Token {
         storage.balances.at(recipient).add(SafeU120::new(amount));
 
         1
+    }
+
+    unconstrained fn get_escrows() -> [Option<EscrowNote>; 10] {
+        // TODO: add pagination
+        let options = NoteViewerOptions::new().set_offset(0);
+        storage.escrows.view_notes(options)
     }
 
     // docs:start:initialize

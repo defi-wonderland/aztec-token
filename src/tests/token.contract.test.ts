@@ -2,6 +2,7 @@ import { TokenContract } from '../artifacts/Token.js';
 import { TokenSimulator } from './token_simulator.js';
 import {
   AccountWallet,
+  AccountWalletWithPrivateKey,
   Fr,
   NotePreimage,
   PXE,
@@ -9,11 +10,12 @@ import {
   TxStatus,
   computeAuthWitMessageHash,
   computeMessageSecretHash,
+  createAccount,
   createPXEClient,
   getSandboxAccountsWallets,
   waitForSandbox,
 } from '@aztec/aztec.js';
-import { CompleteAddress } from '@aztec/circuits.js';
+import { AztecAddress, CompleteAddress } from '@aztec/circuits.js';
 import { DebugLogger, createDebugLogger } from '@aztec/foundation/log';
 import { afterEach, beforeAll, expect, jest } from '@jest/globals';
 
@@ -955,6 +957,92 @@ describe('e2e_token_contract', () => {
             `Unknown auth witness for message hash 0x${expectedMessageHash.toString('hex')}`,
           );
         });
+      });
+    });
+  });
+
+  describe.only('Escrow', () => {
+    let amount: bigint;
+
+    let participant1: AccountWalletWithPrivateKey;
+    let participant2: AccountWalletWithPrivateKey;
+    let agent: AccountWalletWithPrivateKey;
+
+    let from = accounts[0];
+    
+    beforeAll(async () => {
+      participant1 = await createAccount(pxe);
+      participant2 = await createAccount(pxe);
+      agent = await createAccount(pxe);
+    });
+
+    describe('Escrow flow', () => {
+
+      let balance: bigint;
+
+      it('escrow', async () => {
+        balance = await asset.methods.balance_of_private(from.address).view();
+        amount = balance / 2n;
+        expect(amount).toBeGreaterThan(0n);
+
+        const tx = asset.methods.escrow(from, agent.getAddress(), amount, [participant1.getAddress(), participant2.getAddress(), 0, 0], 0).send();
+        const receipt = await tx.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
+        tokenSim.escrow(from.address, amount);
+
+        const newBalance = await asset.methods.balance_of_private(from.address).view();
+        expect(newBalance).toEqual(balance - amount);
+      });
+
+      it('settle_escrow', async () => {
+        const escrows = await asset.withWallet(participant1).methods.get_escrows().view();
+        const randomness = escrows[0][3];
+        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0).send();
+        const receiptClaim = await txClaim.wait();
+        expect(receiptClaim.status).toBe(TxStatus.MINED);
+        tokenSim.settle_escrow(participant1.getAddress(), amount);
+
+        const newBalance = await asset.methods.balance_of_private(from.address).view();
+        expect(newBalance).toEqual(balance);
+      });
+    });
+
+    describe('failure cases', () => {
+      it('try to redeem as recipient (double-spend) [REVERTS]', async () => {
+        await expect(addPendingShieldNoteToPXE(0, amount, secretHash, txHash)).rejects.toThrowError(
+          'The note has been destroyed.',
+        );
+        await expect(
+          asset.methods.redeem_shield(accounts[0].address, amount, secret).simulate(),
+        ).rejects.toThrowError('Can only remove a note that has been read from the set.');
+      });
+
+      it('mint_private as non-minter', async () => {
+        await expect(
+          asset.withWallet(wallets[1]).methods.mint_private(amount, secretHash).simulate(),
+        ).rejects.toThrowError('Assertion failed: caller is not minter');
+      });
+
+      it('mint >u120 tokens to overflow', async () => {
+        const amount = 2n ** 120n; // SafeU120::max() + 1;
+        await expect(asset.methods.mint_private(amount, secretHash).simulate()).rejects.toThrowError(
+          'Assertion failed: Value too large for SafeU120',
+        );
+      });
+
+      it('mint <u120 but recipient balance >u120', async () => {
+        const amount = 2n ** 120n - tokenSim.balanceOfPrivate(accounts[0].address);
+        expect(amount).toBeLessThan(2n ** 120n);
+        await expect(asset.methods.mint_private(amount, secretHash).simulate()).rejects.toThrowError(
+          'Assertion failed: Overflow',
+        );
+      });
+
+      it('mint <u120 but such that total supply >u120', async () => {
+        const amount = 2n ** 120n - tokenSim.totalSupply;
+        await expect(asset.methods.mint_private(amount, secretHash).simulate()).rejects.toThrowError(
+          'Assertion failed: Overflow',
+        );
       });
     });
   });
