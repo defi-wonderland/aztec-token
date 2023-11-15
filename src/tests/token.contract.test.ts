@@ -105,33 +105,79 @@ describe('e2e_token_contract', () => {
   
       it('settle_escrow', async () => {
         const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+        const participant1Balance = await asset.methods.balance_of_private(participant1.getAddress()).view();
 
-        const escrowNotes = await pxe.getNotes({
-          contractAddress: asset.address,
-          storageSlot: new Fr(7),
-        });
-        
-        const escrowNotes2 = await pxe.getNotes({
-          owner: participant1.getAddress(),
-          contractAddress: asset.address,
-          storageSlot: new Fr(7),
-        });
-
-        console.log(escrowNotes);
-
-        console.log(escrowNotes2);
-
-        console.log(escrows);
-
-        // const randomness = escrowNotes[0].note.items[1];
-        // const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0).send();
-        // const receiptClaim = await txClaim.wait();
-        // expect(receiptClaim.status).toBe(TxStatus.MINED);
-        // tokenSim.settle_escrow(participant1.getAddress(), amount);
+        const randomness = escrows[0]._value.randomness;
+        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0).send();
+        const receiptClaim = await txClaim.wait();
+        expect(receiptClaim.status).toBe(TxStatus.MINED);
+        tokenSim.settle_escrow(participant1.getAddress(), amount);
   
-        const newBalance = await asset.methods.balance_of_private(from.address).view();
-        expect(newBalance).toEqual(balance);
+        const newBalance = await asset.methods.balance_of_private(participant1.getAddress()).view();
+        expect(newBalance).toEqual(participant1Balance + amount);
       });
+    });
+
+    describe('Failure cases', () => {
+
+      let balance: bigint;
+
+      describe('escrow', () => {
+        it('fails when the user does not have enough balance', async () => {
+          let newUser = await createAccount(pxe);
+
+          expect(await asset.methods.balance_of_private(newUser.getAddress()).view()).toEqual(0n);
+
+          let escrowTx = asset.withWallet(newUser).methods.escrow(newUser.getAddress(), agent.getAddress(), 1n, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0);
+          await expect(escrowTx.simulate()).rejects.toThrowError(`(JSON-RPC PROPAGATED) Assertion failed: Balance too low 'minuend.ge(subtrahend) == true'`);
+        })
+
+        it('fails when invalid nonce provided', async () => {
+          balance = await asset.methods.balance_of_private(from.address).view();
+          let amount = balance / 2n;
+          expect(amount).toBeGreaterThan(0n);
+    
+          const tx = asset.withWallet(participant1).methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0);
+          await expect(tx.simulate()).rejects.toThrowError();
+        })
+      })
+
+      describe('settle_escrow', () => {
+        let balance: bigint;
+
+        it('escrow', async () => {
+          balance = await asset.methods.balance_of_private(from.address).view();
+          amount = balance / 2n;
+          expect(amount).toBeGreaterThan(0n);
+    
+          const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0).send();
+          const receipt = await tx.wait();
+          expect(receipt.status).toBe(TxStatus.MINED);
+          tokenSim.escrow(from.address, amount);
+    
+          const newBalance = await asset.methods.balance_of_private(from.address).view();
+          expect(newBalance).toEqual(balance - amount);
+        });
+    
+        it('reverts when calling from a different address and with invalid nonce', async () => {
+          const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+          const randomness = escrows[0]._value.randomness;
+          const settleTx = asset.withWallet(wallets[0]).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0);
+          await expect(settleTx.simulate()).rejects.toThrowError();
+        });
+
+        it('reverts when calling from the correct agent but with an invalid nonce', async () => {
+          const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+          const randomness = escrows[0]._value.randomness;
+          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 1n);
+          await expect(settleTx.simulate()).rejects.toThrowError('invalid nonce');
+        })
+
+        it('reverts if escrow does not exist', async () => {
+          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, 0n, 0);
+          await expect(settleTx.simulate()).rejects.toThrowError('escrow does not exist');
+        });
+      })
     });
   });
 

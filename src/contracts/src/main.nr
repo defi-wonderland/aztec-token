@@ -380,35 +380,7 @@ contract Token {
 
         // create the EscrowNote
         let mut escrow_note = EscrowNote::new(amount, agent, participants);
-        storage.escrows.insert(&mut escrow_note, false);
-
-        // TODO: remove
-        let address_this = context.this_address();
-
-        emit_encrypted_log(
-            &mut context,
-            address_this,
-            7,
-            get_public_key(from.address),
-            escrow_note.serialize(),
-        ); 
-
-        emit_encrypted_log(
-            &mut context,
-            address_this,
-            7,
-            get_public_key(participants[0].address),
-            escrow_note.serialize(),
-        ); 
-
-        emit_encrypted_log(
-            &mut context,
-            address_this,
-            7,
-            get_public_key(agent.address),
-            escrow_note.serialize(),
-        ); 
-        //
+        storage.escrows.insert(&mut escrow_note, true);
 
         1
     }
@@ -533,7 +505,7 @@ contract Token {
     // Computes note hash and nullifier.
     // Note 1: Needs to be defined by every contract producing logs.
     // Note 2: Having it in all the contracts gives us the ability to compute the note hash and nullifier differently for different kind of notes.
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; TOKEN_NOTE_LEN]) -> [Field; 4] {
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; ESCROW_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         if (storage_slot == 5) {
             note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, serialized_note)
