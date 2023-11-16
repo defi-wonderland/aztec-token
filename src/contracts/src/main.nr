@@ -385,8 +385,6 @@ contract Token {
         1
     }
 
-    // Maybe we can remove this method and use it in the transfer method if we change to ValueNote
-    // Add the recipients into the valueNote
     #[aztec(private)]
     fn settle_escrow(agent: AztecAddress, recipient: AztecAddress, amount: Field, randomness: Field, nonce: Field) -> Field {
         if (agent.address != context.msg_sender()) {
