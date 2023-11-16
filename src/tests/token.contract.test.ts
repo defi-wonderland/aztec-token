@@ -1,8 +1,6 @@
-import { TokenContract } from '../artifacts/Token.js';
-import { TokenSimulator } from './token_simulator.js';
 import {
-  AccountWallet,
   AccountWalletWithPrivateKey,
+  ContractFunctionInteraction,
   Fr,
   Note,
   PXE,
@@ -13,12 +11,15 @@ import {
   createAccount,
   createPXEClient,
   getSandboxAccountsWallets,
-  waitForSandbox,
+  waitForSandbox
 } from '@aztec/aztec.js';
-import { AztecAddress, CompleteAddress } from '@aztec/circuits.js';
+import { CompleteAddress } from '@aztec/circuits.js';
 import { DebugLogger, createDebugLogger } from '@aztec/foundation/log';
 import { ExtendedNote } from '@aztec/types';
 import { afterEach, beforeAll, expect, jest } from '@jest/globals';
+import { TokenContract } from '../artifacts/Token.js';
+import { TokenSimulator } from './token_simulator.js';
+import { assert } from 'console';
 
 // assumes sandbox is running locally, which this script does not trigger
 // as well as anvil.  anvil can be started with yarn test:integration
@@ -98,9 +99,42 @@ describe('e2e_token_contract', () => {
         const receipt = await tx.wait();
         expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.escrow(from.address, amount);
-  
+      });
+      
+      it('takes balance form the user', async () => {
         const newBalance = await asset.methods.balance_of_private(from.address).view();
         expect(newBalance).toEqual(balance - amount);
+      });
+
+      it('created the correct notes', async () => {
+        const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
+
+        // Transform all of the pxe getNotes call into a promise.all statement:
+        const [escrowsFrom, escrowsParticipant1, escrowsParticipant2, escrowsParticipant3, escrowsAgent] = 
+          await Promise.all([
+            pxe.getNotes({owner: from.address, ...filter}),
+            pxe.getNotes({owner: participant1.getAddress(), ...filter}),
+            pxe.getNotes({owner: participant2.getAddress(), ...filter}),
+            pxe.getNotes({owner: participant3.getAddress(), ...filter}),
+            pxe.getNotes({owner: agent.getAddress(), ...filter}),
+          ]);
+
+        expect(escrowsFrom.length).toBe(1);
+        expect(escrowsParticipant1.length).toBe(1);
+        expect(escrowsParticipant2.length).toBe(1);
+        expect(escrowsParticipant3.length).toBe(1);
+        expect(escrowsAgent.length).toBe(1);
+
+        // The notes are the same for every participant
+        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant1[0].note.items);
+        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant2[0].note.items);
+        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant3[0].note.items);
+        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsAgent[0].note.items);
+
+        // Amount is correct
+        expect(escrowsFrom[0].note.items[0].value).toEqual(amount);
+        // Agent is correct
+        expect(escrowsFrom[0].note.items[1].value).toEqual(agent.getAddress().toBigInt());
       });
   
       it('settle_escrow', async () => {
@@ -109,8 +143,106 @@ describe('e2e_token_contract', () => {
 
         const randomness = escrows[0]._value.randomness;
         const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0).send();
-        const receiptClaim = await txClaim.wait();
-        expect(receiptClaim.status).toBe(TxStatus.MINED);
+        const receipt = await txClaim.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
+        tokenSim.settle_escrow(participant1.getAddress(), amount);
+  
+        const newBalance = await asset.methods.balance_of_private(participant1.getAddress()).view();
+        expect(newBalance).toEqual(participant1Balance + amount);
+      });
+
+      it('removed the notes', async () => {
+        const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
+
+        // Transform all of the pxe getNotes call into a promise.all statement:
+        const [escrowsFrom, escrowsParticipant1, escrowsParticipant2, escrowsParticipant3, escrowsAgent] = 
+          await Promise.all([
+            pxe.getNotes({owner: from.address, ...filter}),
+            pxe.getNotes({owner: participant1.getAddress(), ...filter}),
+            pxe.getNotes({owner: participant2.getAddress(), ...filter}),
+            pxe.getNotes({owner: participant3.getAddress(), ...filter}),
+            pxe.getNotes({owner: agent.getAddress(), ...filter}),
+          ]);
+
+        expect(escrowsFrom.length).toBe(0);
+        expect(escrowsParticipant1.length).toBe(0);
+        expect(escrowsParticipant2.length).toBe(0);
+        expect(escrowsParticipant3.length).toBe(0);
+        expect(escrowsAgent.length).toBe(0);
+      });
+    });
+
+    describe('Pay to a random address', () => {
+      let balance: bigint;
+      let amount: bigint;
+      
+      it('escrow', async () => {
+        balance = await asset.methods.balance_of_private(from.address).view();
+        amount = balance / 2n;
+        expect(amount).toBeGreaterThan(0n);
+  
+        const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0).send();
+        const receipt = await tx.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
+        tokenSim.escrow(from.address, amount);
+      });
+
+      it('pay random address', async () => {
+        const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+        const newUser = await createAccount(pxe);
+        const userBalance = await asset.methods.balance_of_private(newUser.getAddress()).view();
+        expect(userBalance).toBe(0n);
+
+        const randomness = escrows[0]._value.randomness;
+        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), newUser.getAddress(), amount, randomness, 0).send();
+        const receipt = await txClaim.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
+        tokenSim.settle_escrow(newUser.getAddress(), amount);
+  
+        const newBalance = await asset.methods.balance_of_private(newUser.getAddress()).view();
+        expect(newBalance).toEqual(userBalance + amount);
+      });
+    });
+
+    describe('Escrow on behalf of another user', () => {
+      let balance: bigint;
+      let amount: bigint;
+      let newUser: AccountWalletWithPrivateKey;
+      
+      it('escrow on behalf of another user', async () => {
+        balance = await asset.methods.balance_of_private(from.address).view();
+        amount = balance / 2n;
+        expect(amount).toBeGreaterThan(0n);
+
+        newUser = await createAccount(pxe);
+        // From address gives permission to newUser to call escrow on their behalf
+        const nonce = Fr.random();
+        const action = asset
+        .withWallet(newUser)
+        .methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], nonce);
+        await approveAction(action, newUser, wallets[0], nonce);
+  
+        const tx = action.send();
+        const receipt = await tx.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
+        tokenSim.escrow(from.address, amount);
+
+        const newBalance = await asset.methods.balance_of_private(from.address).view();
+        expect(newBalance).toEqual(balance - amount);
+      });
+
+      it('settle_escrow on behalf of another user', async () => {
+        const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+        const participant1Balance = await asset.methods.balance_of_private(participant1.getAddress()).view();
+        const randomness = escrows[0]._value.randomness;
+
+        const nonce = Fr.random();
+        const action = asset.withWallet(newUser).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, nonce);
+        await approveAction(action, newUser, agent, nonce);
+        
+        const tx = action.send();
+        const receipt = await tx.wait();
+        expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.settle_escrow(participant1.getAddress(), amount);
   
         const newBalance = await asset.methods.balance_of_private(participant1.getAddress()).view();
@@ -226,5 +358,12 @@ describe('e2e_token_contract', () => {
       .wait();
 
     tokenSim.redeemShield(account.getAddress(), amount);
+  };
+
+  const approveAction = async (action: ContractFunctionInteraction, sender: AccountWalletWithPrivateKey, approver: AccountWalletWithPrivateKey, nonce: Fr) => {
+    const messageHash = await computeAuthWitMessageHash(sender.getAddress(), action.request());
+    const witness = await approver.createAuthWitness(messageHash);
+    await sender.addAuthWitness(witness);
+    return nonce;
   };
 });
