@@ -33,7 +33,10 @@ contract Token {
         types::address::{AztecAddress},
         selector::compute_selector,
         log::emit_encrypted_log,
-        oracle::get_public_key::get_public_key,
+        oracle::{
+            get_public_key::get_public_key,
+            rand::rand
+        }
     };
 
     // docs:start:import_authwit
@@ -379,10 +382,11 @@ contract Token {
         storage.balances.at(from).sub(safe_amount);
 
         // create the EscrowNote
-        let mut escrow_note = EscrowNote::new(amount, agent, participants);
+        let randomness = rand();
+        let mut escrow_note = EscrowNote::new(amount, agent, randomness, participants);
         storage.escrows.insert(&mut escrow_note, true);
 
-        1
+        escrow_note.randomness
     }
 
     #[aztec(private)]

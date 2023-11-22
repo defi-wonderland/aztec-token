@@ -6,7 +6,6 @@ use dep::aztec::{
         note_getter_options::NoteGetterOptions,
     },
     oracle::{
-        rand::rand,
         get_secret_key::get_secret_key,
         get_public_key::get_public_key,
     },
@@ -37,8 +36,7 @@ struct EscrowNote {
 // docs:end:value-note-def
 
 impl EscrowNote {
-    pub fn new(value: Field, agent: AztecAddress, participants: [AztecAddress; 4]) -> Self {
-        let randomness = rand();
+    pub fn new(value: Field, agent: AztecAddress, randomness: Field, participants: [AztecAddress; 4]) -> Self {
         let header = NoteHeader::empty();
         EscrowNote {
             value,
