@@ -420,7 +420,7 @@ contract Token {
     }
 
     #[aztec(private)]
-    fn broadcast_value_note_for(
+    fn broadcast_escrow_note_for(
         user: AztecAddress,
         owner: AztecAddress,
         amount: Field,
