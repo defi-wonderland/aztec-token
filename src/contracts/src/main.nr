@@ -50,10 +50,9 @@ contract Token {
 
     use crate::types::{
         transparent_note::{TransparentNote, TransparentNoteMethods, TRANSPARENT_NOTE_LEN},
-        token_note::{TokenNote, TokenNoteMethods, TOKEN_NOTE_LEN},
+        owned_value_note::{OwnedValueNote, OWNED_VALUE_NOTE_LEN, OwnedValueNoteMethods},
         balances_map::{BalancesMap},
         safe_u120_serialization::{SafeU120SerializationMethods, SAFE_U120_SERIALIZED_LEN},
-        escrow_note::{EscrowNote, EscrowNoteMethods, ESCROW_NOTE_LEN},
     };
     // docs:end::imports
 
@@ -73,7 +72,7 @@ contract Token {
         pending_shields: Set<TransparentNote, TRANSPARENT_NOTE_LEN>,
         // docs:end:storage_pending_shields
         public_balances: Map<PublicState<SafeU120, SAFE_U120_SERIALIZED_LEN>>,
-        escrows: Set<EscrowNote, ESCROW_NOTE_LEN>,
+        escrows: Set<OwnedValueNote, OWNED_VALUE_NOTE_LEN>,
     }
     // docs:end:storage_struct
 
@@ -121,7 +120,7 @@ contract Token {
                         )
                     },
                 ),
-                escrows: Set::new(context, 7, EscrowNoteMethods),
+                escrows: Set::new(context, 7, OwnedValueNoteMethods),
             }
         }
     }
@@ -366,9 +365,8 @@ contract Token {
     #[aztec(private)]
     fn escrow(
         from: AztecAddress,
-        agent: AztecAddress,
+        owner: AztecAddress,
         amount: Field,
-        participants: [AztecAddress; 4],
         nonce: Field,
     ) -> Field {
         if (from.address != context.msg_sender()) {
@@ -382,17 +380,16 @@ contract Token {
         storage.balances.at(from).sub(safe_amount);
 
         // create the EscrowNote
-        let randomness = rand();
-        let mut escrow_note = EscrowNote::new(amount, agent, randomness, participants);
+        let mut escrow_note = OwnedValueNote::new(SafeU120::new(amount), owner);
         storage.escrows.insert(&mut escrow_note, true);
 
         escrow_note.randomness
     }
 
     #[aztec(private)]
-    fn settle_escrow(agent: AztecAddress, recipient: AztecAddress, amount: Field, randomness: Field, nonce: Field) -> Field {
-        if (agent.address != context.msg_sender()) {
-            assert_current_call_valid_authwit(&mut context, agent);
+    fn settle_escrow(owner: AztecAddress, recipient: AztecAddress, amount: Field, randomness: Field, nonce: Field) -> Field {
+        if (owner.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, owner);
         } else {
             assert(nonce == 0, "invalid nonce");
         }
@@ -400,14 +397,14 @@ contract Token {
         let escrows = storage.escrows;
 
         // Filter the note
-        let options = NoteGetterOptions::new().select(0, amount).select(1, agent.address).select(2, randomness).set_limit(1);
+        let options = NoteGetterOptions::new().select(0, amount).select(1, owner.address).select(2, randomness).set_limit(1);
         let notes = escrows.get_notes(options);
         
         if(notes[0].is_some()) {
             let note = notes[0].unwrap_unchecked();
 
-            // Check the msg sender is the agent
-            assert(note.agent.address == agent.address, "msg sender is not the agent");
+            // Check the msg sender is the owner
+            assert(note.owner.address == owner.address, "msg sender is not the owner");
 
             // Nullify the note
             escrows.remove(note); 
@@ -422,7 +419,38 @@ contract Token {
         1
     }
 
-    unconstrained fn get_escrows(offset: u32) -> [Option<EscrowNote>; 10] {
+    #[aztec(private)]
+    fn broadcast_value_note_for(
+        user: AztecAddress,
+        owner: AztecAddress,
+        amount: Field,
+        randomness: Field
+    ) -> Field {
+        let escrows = storage.escrows;
+
+        let options = NoteGetterOptions::new().select(0, amount).select(1, owner.address).select(2, randomness).set_limit(1);
+        let notes = escrows.get_notes(options);
+        
+        if(notes[0].is_some()) {
+            let note = notes[0].unwrap_unchecked();
+
+            // Emit encrypted log
+            emit_encrypted_log(
+                &mut context,
+                context.this_address(),
+                7,
+                get_public_key(user.address),
+                note.serialize(),
+            ); 
+        } else {
+            // TODO: is there a way to revert directly?
+            assert(false, "escrow does not exist");
+        }
+
+        1
+    }
+
+    unconstrained fn get_escrows(offset: u32) -> [Option<OwnedValueNote>; 10] {
         // TODO: add pagination
         let options = NoteViewerOptions::new().set_offset(offset);
         storage.escrows.view_notes(options)
@@ -507,14 +535,12 @@ contract Token {
     // Computes note hash and nullifier.
     // Note 1: Needs to be defined by every contract producing logs.
     // Note 2: Having it in all the contracts gives us the ability to compute the note hash and nullifier differently for different kind of notes.
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; ESCROW_NOTE_LEN]) -> [Field; 4] {
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; OWNED_VALUE_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         if (storage_slot == 5) {
             note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, serialized_note)
-        } else if (storage_slot == 7) {
-            note_utils::compute_note_hash_and_nullifier(EscrowNoteMethods, note_header, serialized_note)
         } else {
-            note_utils::compute_note_hash_and_nullifier(TokenNoteMethods, note_header, serialized_note)
+            note_utils::compute_note_hash_and_nullifier(OwnedValueNoteMethods, note_header, serialized_note)
         }
     }
     // docs:end:compute_note_hash_and_nullifier

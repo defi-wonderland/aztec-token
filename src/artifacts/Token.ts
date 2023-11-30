@@ -97,6 +97,9 @@ export class TokenContract extends ContractBase {
     /** balance_of_public(owner: struct) */
     balance_of_public: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** broadcast_value_note_for(user: struct, owner: struct, amount: field, randomness: field, nonce: field) */
+    broadcast_value_note_for: ((user: AztecAddressLike, owner: AztecAddressLike, amount: FieldLike, randomness: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** burn(from: struct, amount: field, nonce: field) */
     burn: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -106,8 +109,8 @@ export class TokenContract extends ContractBase {
     /** compute_note_hash_and_nullifier(contract_address: field, nonce: field, storage_slot: field, serialized_note: array) */
     compute_note_hash_and_nullifier: ((contract_address: FieldLike, nonce: FieldLike, storage_slot: FieldLike, serialized_note: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** escrow(from: struct, agent: struct, amount: field, participants: array, nonce: field) */
-    escrow: ((from: AztecAddressLike, agent: AztecAddressLike, amount: FieldLike, participants: AztecAddressLike[], nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** escrow(from: struct, owner: struct, amount: field, nonce: field) */
+    escrow: ((from: AztecAddressLike, owner: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** get_escrows(offset: integer) */
     get_escrows: ((offset: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -130,8 +133,8 @@ export class TokenContract extends ContractBase {
     /** set_minter(minter: struct, approve: boolean) */
     set_minter: ((minter: AztecAddressLike, approve: boolean) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** settle_escrow(agent: struct, recipient: struct, amount: field, randomness: field, nonce: field) */
-    settle_escrow: ((agent: AztecAddressLike, recipient: AztecAddressLike, amount: FieldLike, randomness: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** settle_escrow(owner: struct, recipient: struct, amount: field, randomness: field, nonce: field) */
+    settle_escrow: ((owner: AztecAddressLike, recipient: AztecAddressLike, amount: FieldLike, randomness: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** shield(from: struct, amount: field, secret_hash: field, nonce: field) */
     shield: ((from: AztecAddressLike, amount: FieldLike, secret_hash: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
