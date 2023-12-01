@@ -37,59 +37,64 @@
     style-loader "^3.3.1"
     wagmi "^0.11.2"
 
-"@aztec/aztec.js@0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@aztec/aztec.js/-/aztec.js-0.14.2.tgz#0e2fdfecee801121bce513d399127dbeb69229f3"
-  integrity sha512-bmH7/rGQRoKP1OXyI3A4rQFT0DbaFCa/ltRMLrtYTu07P/QsUMhujPkE+K2vERvMpvqpIvQRMnNT2MSw3zJQvg==
+"@aztec/aztec.js@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/aztec.js/-/aztec.js-0.16.1.tgz#35edfb1963e9d46c2a9330cb53e7ee843dfc0324"
+  integrity sha512-PxQVcQc7lNY1km3XDaSYEfLErAQr3LEFHMcnq/oMVX3whnsFKp77zttuKr5yfoX69QBwcUGsueN5NlUAoTFpww==
   dependencies:
-    "@aztec/circuits.js" "0.14.2"
-    "@aztec/ethereum" "0.14.2"
-    "@aztec/foundation" "0.14.2"
-    "@aztec/types" "0.14.2"
+    "@aztec/circuits.js" "0.16.1"
+    "@aztec/ethereum" "0.16.1"
+    "@aztec/foundation" "0.16.1"
+    "@aztec/types" "0.16.1"
     lodash.every "^4.6.0"
     lodash.partition "^4.6.0"
     lodash.zip "^4.2.0"
     tslib "^2.4.0"
 
-"@aztec/circuits.js@0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@aztec/circuits.js/-/circuits.js-0.14.2.tgz#8f67c51c9f7cf77c8f544e735d824143d80cf700"
-  integrity sha512-w+Ur9aAH+tgmlDlMIGGDcNnlefv0m9mNXeIXU8aBVgJY++R12dDWOG/WcyWfzlVEDY2BAZ4oILg71X+oB0PFAA==
+"@aztec/bb.js@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/bb.js/-/bb.js-0.16.1.tgz#b12ac9ca75d116597455e8743a1da15eedcfcc4e"
+  integrity sha512-KF7yMvHDZVQ5YHGVnfXWS+ibyDwWmKpPs27LYFi7gsSfMnTh00eTAuO6yJJ98EM4RmrldTRXxqoJXE3/JwHNdg==
   dependencies:
-    "@aztec/foundation" "0.14.2"
-    "@msgpack/msgpack" "^3.0.0-beta2"
-    "@noble/curves" "^1.0.0"
-    "@types/lodash.camelcase" "^4.3.7"
-    "@types/lodash.times" "^4.3.7"
-    cross-fetch "^3.1.5"
-    detect-node "^2.1.0"
+    comlink "^4.4.1"
+    commander "^10.0.1"
+    debug "^4.3.4"
+    tslib "^2.4.0"
+
+"@aztec/circuits.js@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/circuits.js/-/circuits.js-0.16.1.tgz#6ee4bd250002a713cc600c7a96f54bb2092579d0"
+  integrity sha512-kd4P+WzjBAL3E7sCbOw9vXg91mGcxMt9F1bRLgrkdhujnNkOvgWAGD2IL+Xkk282Nkr078FOlzFgssviP4N6xA==
+  dependencies:
+    "@aztec/bb.js" "0.16.1"
+    "@aztec/foundation" "0.16.1"
     eslint "^8.35.0"
-    lodash.capitalize "^4.2.1"
     lodash.chunk "^4.2.0"
-    lodash.mapvalues "^4.6.0"
-    lodash.snakecase "^4.1.1"
     lodash.times "^4.3.2"
     tslib "^2.4.0"
 
-"@aztec/ethereum@0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@aztec/ethereum/-/ethereum-0.14.2.tgz#a276d71818b5f9bacb4a1fe28bd5331dc723b059"
-  integrity sha512-BLuzGWJCd8PqDEkSwYzERkX3RA3Pb3FUAA6vihplnobCdNDHGII8rVP4cLr/NIwhTLsi+2ijXtjw3WL+KIGr6g==
+"@aztec/ethereum@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/ethereum/-/ethereum-0.16.1.tgz#1d2e77c15a020293160c6edccd2a2cc802ff21eb"
+  integrity sha512-+Y7rumAIdf5zWJThlUPPo/P0+NjfbY8NxQyl1Tv+edKioWGEIvLs8/9usEluz2E2HMqNgBZdVW9zw1iu9Xmjhg==
   dependencies:
-    "@aztec/foundation" "0.14.2"
+    "@aztec/foundation" "0.16.1"
     dotenv "^16.0.3"
     tslib "^2.4.0"
     viem "^1.2.5"
 
-"@aztec/foundation@0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@aztec/foundation/-/foundation-0.14.2.tgz#8acc91e2a168471d36e6eb2734e6677199c2d67c"
-  integrity sha512-OCKy6WNMnslXID4DKxPvXUg1oazdu8m7nDszNDu8A8mZNXremmmAK12ZkbMQMGSWncldbH0LKpoFXe33cgo3rQ==
+"@aztec/foundation@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/foundation/-/foundation-0.16.1.tgz#91fc7e3f717f902b9589541cae66ea38d2bf43d1"
+  integrity sha512-KSeq20Gv7M7O5ZXP+KJP70AmK5XnuBE9YAANdt4icjwHyQlzyhT3q/gmucv9A7PLJFSRz1lS62RunORgbx5x9w==
   dependencies:
+    "@aztec/bb.js" "0.16.1"
     "@koa/cors" "^4.0.0"
     "@noble/curves" "^1.2.0"
+    bn.js "^5.2.1"
     debug "^4.3.4"
     detect-node "^2.1.0"
+    elliptic "^6.5.4"
     hash.js "^1.1.7"
     koa "^2.14.2"
     koa-bodyparser "^4.4.0"
@@ -103,14 +108,14 @@
     sha3 "^2.1.4"
     zod "^3.22.4"
 
-"@aztec/types@0.14.2":
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/@aztec/types/-/types-0.14.2.tgz#8cc35d1ce398e69c2e25d879a30723e030b071cf"
-  integrity sha512-dLAO10T4QdIBgwRNb84oRzEIaLi93fbromBUrlEm1dfZise2s4tTPWY35JNuhRPjXGfXSbO0AwtC8LPbxPx87Q==
+"@aztec/types@0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@aztec/types/-/types-0.16.1.tgz#99cd240e5b24fc600e2c5493631b84b950d15482"
+  integrity sha512-DqM4zx8yyuQd9jy3SRlCmr59L+wnMolzuOIA8/Ron57xt/QaIQRJCCgr6XgqaKk8O8qfegliGGO7NPvPUofX4Q==
   dependencies:
-    "@aztec/circuits.js" "0.14.2"
-    "@aztec/ethereum" "0.14.2"
-    "@aztec/foundation" "0.14.2"
+    "@aztec/circuits.js" "0.16.1"
+    "@aztec/ethereum" "0.16.1"
+    "@aztec/foundation" "0.16.1"
     browserify-cipher "^1.0.1"
     lodash.clonedeep "^4.5.0"
     lodash.isequal "^4.5.0"
@@ -1243,12 +1248,7 @@
     "@motionone/dom" "^10.16.4"
     tslib "^2.3.1"
 
-"@msgpack/msgpack@^3.0.0-beta2":
-  version "3.0.0-beta2"
-  resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-3.0.0-beta2.tgz#5bccee30f84df220b33905e3d8249ba96deca0b7"
-  integrity sha512-y+l1PNV0XDyY8sM3YtuMLK5vE3/hkfId+Do8pLo/OPxfxuFAUwcGz3oiiUuV46/aBpwTzZ+mRWVMtlSKbradhw==
-
-"@noble/curves@1.2.0", "@noble/curves@^1.0.0", "@noble/curves@^1.2.0", "@noble/curves@~1.2.0":
+"@noble/curves@1.2.0", "@noble/curves@^1.2.0", "@noble/curves@~1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@noble/curves/-/curves-1.2.0.tgz#92d7e12e4e49b23105a2555c6984d41733d65c35"
   integrity sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==
@@ -1805,25 +1805,6 @@
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
-
-"@types/lodash.camelcase@^4.3.7":
-  version "4.3.8"
-  resolved "https://registry.yarnpkg.com/@types/lodash.camelcase/-/lodash.camelcase-4.3.8.tgz#0cbf6b4d13ed2ba94310d114c7bec2d171fe4f44"
-  integrity sha512-jwsvMuU3ntB7w3a4L/oLW24qpBE9fobU5O/uCYWQctlvEOoWkXEgw/fkpY+onmT37IOQMVcVW9UiJ33CZE70ug==
-  dependencies:
-    "@types/lodash" "*"
-
-"@types/lodash.times@^4.3.7":
-  version "4.3.8"
-  resolved "https://registry.yarnpkg.com/@types/lodash.times/-/lodash.times-4.3.8.tgz#c12a828ba55b18741276580c1c1c692ae32c9afd"
-  integrity sha512-CHTv0sGtPwq0a4kqi2gUZNMZJsQSbgVfA3aa6cLC7na/7IT6I2IH7WxWIybDSrc0K+2g4zIlm4eorhoFlIjqDA==
-  dependencies:
-    "@types/lodash" "*"
-
-"@types/lodash@*":
-  version "4.14.200"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.200.tgz#435b6035c7eba9cdf1e039af8212c9e9281e7149"
-  integrity sha512-YI/M/4HRImtNf3pJgbF+W6FrXovqj+T+/HpENLTooK9PnkacBsDpeP3IpHab40CClUfhNmdM2WTNP2sa2dni5Q==
 
 "@types/mime@*":
   version "3.0.3"
@@ -3764,6 +3745,11 @@ colorette@^2.0.10, colorette@^2.0.14:
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-2.0.20.tgz#9eb793e6833067f7235902fcd3b09917a000a95a"
   integrity sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==
 
+comlink@^4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/comlink/-/comlink-4.4.1.tgz#e568b8e86410b809e8600eb2cf40c189371ef981"
+  integrity sha512-+1dlx0aY5Jo1vHy/tSsIGpSkN4tS9rZSW8FIhG0JH/crs9wwweswIo/POr451r7bZww3hFbPAKnTpimzL/mm4Q==
+
 commander@^10.0.1:
   version "10.0.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-10.0.1.tgz#881ee46b4f77d1c1dccc5823433aa39b022cbe06"
@@ -3917,7 +3903,7 @@ create-require@^1.1.0:
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
 
-cross-fetch@^3.1.4, cross-fetch@^3.1.5:
+cross-fetch@^3.1.4:
   version "3.1.8"
   resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.8.tgz#0327eba65fd68a7d119f8fb2bf9334a1a7956f82"
   integrity sha512-cvA+JwZoU0Xq+h6WkMvAUqPEYy92Obet6UdKLfW60qn99ftItKjB5T+BkyWOFWe2pUyfQ+IJHmpOTznqk1M6Kg==
@@ -4258,7 +4244,7 @@ electron-to-chromium@^1.4.535:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.571.tgz#8aa71539eb82db98740c3ec861256cc34e0356fd"
   integrity sha512-Sc+VtKwKCDj3f/kLBjdyjMpNzoZsU6WuL/wFb6EH8USmHEcebxRXcRrVpOpayxd52tuey4RUDpUsw5OS5LhJqg==
 
-elliptic@6.5.4:
+elliptic@6.5.4, elliptic@^6.5.4:
   version "6.5.4"
   resolved "https://registry.yarnpkg.com/elliptic/-/elliptic-6.5.4.tgz#da37cebd31e79a1367e941b592ed1fbebd58abbb"
   integrity sha512-iLhC6ULemrljPZb+QutR5TQGB+pdW6KGD5RSegS+8sorOZT+rdQFbsQFJgvN3eRqNALqJer4oQ16YvJHlU8hzQ==
@@ -6712,11 +6698,6 @@ lodash-es@^4.17.21:
   resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.21.tgz#43e626c46e6591b7750beb2b50117390c609e3ee"
   integrity sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==
 
-lodash.capitalize@^4.2.1:
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/lodash.capitalize/-/lodash.capitalize-4.2.1.tgz#f826c9b4e2a8511d84e3aca29db05e1a4f3b72a9"
-  integrity sha512-kZzYOKspf8XVX5AvmQF94gQW0lejFVgb80G85bU4ZWzoJ6C03PQg3coYAUpSTpQWelrZELd3XWgHzw4Ck5kaIw==
-
 lodash.chunk@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/lodash.chunk/-/lodash.chunk-4.2.0.tgz#66e5ce1f76ed27b4303d8c6512e8d1216e8106bc"
@@ -6742,11 +6723,6 @@ lodash.isequal@4.5.0, lodash.isequal@^4.5.0:
   resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
   integrity sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==
 
-lodash.mapvalues@^4.6.0:
-  version "4.6.0"
-  resolved "https://registry.yarnpkg.com/lodash.mapvalues/-/lodash.mapvalues-4.6.0.tgz#1bafa5005de9dd6f4f26668c30ca37230cc9689c"
-  integrity sha512-JPFqXFeZQ7BfS00H58kClY7SPVeHertPE0lNuCyZ26/XlN8TvakYD7b9bGyNmXbT/D3BbtPAAmq90gPWqLkxlQ==
-
 lodash.memoize@4.x:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/lodash.memoize/-/lodash.memoize-4.1.2.tgz#bcc6c49a42a2840ed997f323eada5ecd182e0bfe"
@@ -6761,11 +6737,6 @@ lodash.partition@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/lodash.partition/-/lodash.partition-4.6.0.tgz#a38e46b73469e0420b0da1212e66d414be364ba4"
   integrity sha512-35L3dSF3Q6V1w5j6V3NhNlQjzsRDC/pYKCTdYTmwqSib+Q8ponkAmt/PwEOq3EmI38DSCl+SkIVwLd+uSlVdrg==
-
-lodash.snakecase@^4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/lodash.snakecase/-/lodash.snakecase-4.1.1.tgz#39d714a35357147837aefd64b5dcbb16becd8f8d"
-  integrity sha512-QZ1d4xoBHYUeuouhEq3lk3Uq7ldgyFXGBhg04+oRLnIz8o9T65Eh+8YdroUwn846zchkA9yDsDl5CVVaV2nqYw==
 
 lodash.times@^4.3.2:
   version "4.3.2"

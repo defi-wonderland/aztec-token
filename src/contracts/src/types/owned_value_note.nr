@@ -62,11 +62,7 @@ impl OwnedValueNote {
 
     pub fn compute_note_hash(self) -> Field {
         // TODO(#1205) Should use a non-zero generator index.
-        pedersen_hash([
-            self.amount.value as Field, 
-            self.owner.address as Field,
-            self.randomness,
-        ],0)
+        pedersen_hash(self.serialize(),0)
     }
 
     // docs:start:nullifier

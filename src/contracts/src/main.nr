@@ -13,6 +13,8 @@ contract Token {
     // Libs
     use dep::std::option::Option;
 
+    use dep::aztec::oracle::debug_log::{ debug_log, debug_log_field };
+
     use dep::safe_math::SafeU120;
 
     use dep::aztec::{
@@ -282,14 +284,16 @@ contract Token {
         amount: Field,
         secret: Field,
     ) -> Field {
+        debug_log("here");
         let pending_shields = storage.pending_shields;
         let secret_hash = compute_secret_hash(secret);
         let options = NoteGetterOptions::new().select(0, amount).select(1, secret_hash).set_limit(1);
         let notes = pending_shields.get_notes(options);
         let note = notes[0].unwrap_unchecked();
+        debug_log_field(note.amount);
         pending_shields.remove(note);
 
-        storage.balances.at(to).add(SafeU120::new(amount));
+        // storage.balances.at(to).add(SafeU120::new(amount));
 
         1
     }

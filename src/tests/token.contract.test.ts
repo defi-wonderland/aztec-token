@@ -19,7 +19,6 @@ import { ExtendedNote } from '@aztec/types';
 import { afterEach, beforeAll, expect, jest } from '@jest/globals';
 import { TokenContract } from '../artifacts/Token.js';
 import { TokenSimulator } from './token_simulator.js';
-import { assert } from 'console';
 
 // assumes sandbox is running locally, which this script does not trigger
 // as well as anvil.  anvil can be started with yarn test:integration
@@ -89,13 +88,15 @@ describe('e2e_token_contract', () => {
     describe('Escrow flow', () => {
   
       let balance: bigint;
+      let amount: bigint;
+      let randomness: bigint;
       
       it('escrow', async () => {
         balance = await asset.methods.balance_of_private(from.address).view();
         amount = balance / 2n;
         expect(amount).toBeGreaterThan(0n);
   
-        const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0).send();
+        const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, 0).send();
         const receipt = await tx.wait();
         expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.escrow(from.address, amount);
@@ -106,35 +107,49 @@ describe('e2e_token_contract', () => {
         expect(newBalance).toEqual(balance - amount);
       });
 
-      it('created the correct notes', async () => {
+      it('created the correct notes for the agent', async () => {
         const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
 
         // Transform all of the pxe getNotes call into a promise.all statement:
-        const [escrowsFrom, escrowsParticipant1, escrowsParticipant2, escrowsParticipant3, escrowsAgent] = 
-          await Promise.all([
-            pxe.getNotes({owner: from.address, ...filter}),
-            pxe.getNotes({owner: participant1.getAddress(), ...filter}),
-            pxe.getNotes({owner: participant2.getAddress(), ...filter}),
-            pxe.getNotes({owner: participant3.getAddress(), ...filter}),
-            pxe.getNotes({owner: agent.getAddress(), ...filter}),
-          ]);
+        const escrowsAgent = await pxe.getNotes({owner: agent.getAddress(), ...filter});
 
-        expect(escrowsFrom.length).toBe(1);
-        expect(escrowsParticipant1.length).toBe(1);
-        expect(escrowsParticipant2.length).toBe(1);
-        expect(escrowsParticipant3.length).toBe(1);
         expect(escrowsAgent.length).toBe(1);
 
-        // The notes are the same for every participant
-        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant1[0].note.items);
-        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant2[0].note.items);
-        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsParticipant3[0].note.items);
-        expect(escrowsFrom[0].note.items).toStrictEqual(escrowsAgent[0].note.items);
+        randomness = escrowsAgent[0].note.items[2].toBigInt();
+        
+        // Amount is correct
+        expect(escrowsAgent[0].note.items[0].toBigInt).toEqual(amount);
+        // Agent is correct
+        expect(escrowsAgent[0].note.items[1].toBigInt).toEqual(agent.getAddress().toBigInt());
+        // Randomness is not 0
+        expect(randomness).not.toEqual(0n); 
+      });
+
+      it('creates the correct notes after broadcasting', async () => {
+        const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
+
+        let escrowsParticipant1 = await pxe.getNotes({owner: participant1.getAddress(), ...filter});
+
+        expect(escrowsParticipant1.length).toBe(0);
+
+        // Now we call broadcast escrow note for participant1
+        await asset.withWallet(agent).methods.broadcast_escrow_note_for(
+          participant1.getAddress(), 
+          agent.getAddress(),
+          amount, 
+          randomness
+        ).send().wait();
+
+        escrowsParticipant1 = await pxe.getNotes({owner: participant1.getAddress(), ...filter});
+
+        expect(escrowsParticipant1.length).toBe(1);
 
         // Amount is correct
-        expect(escrowsFrom[0].note.items[0].value).toEqual(amount);
+        expect(escrowsParticipant1[0].note.items[0].toBigInt).toEqual(amount);
         // Agent is correct
-        expect(escrowsFrom[0].note.items[1].value).toEqual(agent.getAddress().toBigInt());
+        expect(escrowsParticipant1[0].note.items[1].toBigInt).toEqual(agent.getAddress().toBigInt());
+        // Randomness is correct
+        expect(escrowsParticipant1[0].note.items[2].toBigInt).toEqual(randomness); 
       });
   
       it('settle_escrow', async () => {
@@ -155,19 +170,13 @@ describe('e2e_token_contract', () => {
         const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
 
         // Transform all of the pxe getNotes call into a promise.all statement:
-        const [escrowsFrom, escrowsParticipant1, escrowsParticipant2, escrowsParticipant3, escrowsAgent] = 
+        const [escrowsParticipant1, escrowsAgent] = 
           await Promise.all([
-            pxe.getNotes({owner: from.address, ...filter}),
             pxe.getNotes({owner: participant1.getAddress(), ...filter}),
-            pxe.getNotes({owner: participant2.getAddress(), ...filter}),
-            pxe.getNotes({owner: participant3.getAddress(), ...filter}),
             pxe.getNotes({owner: agent.getAddress(), ...filter}),
           ]);
 
-        expect(escrowsFrom.length).toBe(0);
         expect(escrowsParticipant1.length).toBe(0);
-        expect(escrowsParticipant2.length).toBe(0);
-        expect(escrowsParticipant3.length).toBe(0);
         expect(escrowsAgent.length).toBe(0);
       });
     });
@@ -181,14 +190,14 @@ describe('e2e_token_contract', () => {
         amount = balance / 2n;
         expect(amount).toBeGreaterThan(0n);
   
-        const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0).send();
+        const tx = asset.withWallet(wallets[0]).methods.escrow(from.address, agent.getAddress(), amount, 0).send();
         const receipt = await tx.wait();
         expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.escrow(from.address, amount);
       });
 
       it('pay random address', async () => {
-        const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+        const escrows = await asset.withWallet(agent).methods.get_escrows(0n).view();
         const newUser = await createAccount(pxe);
         const userBalance = await asset.methods.balance_of_private(newUser.getAddress()).view();
         expect(userBalance).toBe(0n);
@@ -219,7 +228,7 @@ describe('e2e_token_contract', () => {
         const nonce = Fr.random();
         const action = asset
         .withWallet(newUser)
-        .methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], nonce);
+        .methods.escrow(from.address, agent.getAddress(), amount, nonce);
         await approveAction(action, newUser, wallets[0], nonce);
   
         const tx = action.send();
@@ -232,7 +241,7 @@ describe('e2e_token_contract', () => {
       });
 
       it('settle_escrow on behalf of another user', async () => {
-        const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
+        const escrows = await asset.withWallet(agent).methods.get_escrows(0n).view();
         const participant1Balance = await asset.methods.balance_of_private(participant1.getAddress()).view();
         const randomness = escrows[0]._value.randomness;
 
@@ -260,7 +269,7 @@ describe('e2e_token_contract', () => {
 
           expect(await asset.methods.balance_of_private(newUser.getAddress()).view()).toEqual(0n);
 
-          let escrowTx = asset.withWallet(newUser).methods.escrow(newUser.getAddress(), agent.getAddress(), 1n, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0);
+          let escrowTx = asset.withWallet(newUser).methods.escrow(newUser.getAddress(), agent.getAddress(), 1n, 0);
           await expect(escrowTx.simulate()).rejects.toThrowError(`(JSON-RPC PROPAGATED) Assertion failed: Balance too low 'minuend.ge(subtrahend) == true'`);
         })
 
@@ -269,7 +278,7 @@ describe('e2e_token_contract', () => {
           let amount = balance / 2n;
           expect(amount).toBeGreaterThan(0n);
     
-          const tx = asset.withWallet(participant1).methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0);
+          const tx = asset.withWallet(participant1).methods.escrow(from.address, agent.getAddress(), amount, 0);
           await expect(tx.simulate()).rejects.toThrowError();
         })
       })
@@ -282,7 +291,7 @@ describe('e2e_token_contract', () => {
           amount = balance / 2n;
           expect(amount).toBeGreaterThan(0n);
     
-          const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, [from.address, participant1.getAddress(), participant2.getAddress(), participant3.getAddress()], 0).send();
+          const tx = asset.methods.escrow(from.address, agent.getAddress(), amount, 0).send();
           const receipt = await tx.wait();
           expect(receipt.status).toBe(TxStatus.MINED);
           tokenSim.escrow(from.address, amount);
