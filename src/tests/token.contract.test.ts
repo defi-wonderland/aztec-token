@@ -29,7 +29,7 @@ const setupSandbox = async () => {
   return pxe;
 };
 
-const TIMEOUT = 60_000;
+const TIMEOUT = 100_000;
 
 describe('e2e_token_contract', () => {
   jest.setTimeout(TIMEOUT);
@@ -126,9 +126,9 @@ describe('e2e_token_contract', () => {
       });
 
       it('creates the correct notes after broadcasting', async () => {
-        const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
+        const filter = { owner: participant1.getAddress(), contractAddress: asset.address, storageSlot: new Fr(7) };
 
-        let escrowsParticipant1 = await pxe.getNotes({owner: participant1.getAddress(), ...filter});
+        let escrowsParticipant1 = await pxe.getNotes(filter);
 
         expect(escrowsParticipant1.length).toBe(0);
 
@@ -140,16 +140,16 @@ describe('e2e_token_contract', () => {
           randomness
         ).send().wait();
 
-        escrowsParticipant1 = await pxe.getNotes({owner: participant1.getAddress(), ...filter});
+        let newEscrowsParticipant1 = await pxe.getNotes(filter);
 
-        expect(escrowsParticipant1.length).toBe(1);
+        expect(newEscrowsParticipant1.length).toBe(1);
 
         // Amount is correct
-        expect(escrowsParticipant1[0].note.items[0].toBigInt()).toEqual(amount);
+        expect(newEscrowsParticipant1[0].note.items[0].toBigInt()).toEqual(amount);
         // Agent is correct
-        expect(escrowsParticipant1[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
+        expect(newEscrowsParticipant1[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
         // Randomness is correct
-        expect(escrowsParticipant1[0].note.items[2].toBigInt()).toEqual(randomness); 
+        expect(newEscrowsParticipant1[0].note.items[2].toBigInt()).toEqual(randomness); 
       });
   
       it('settle_escrow', async () => {

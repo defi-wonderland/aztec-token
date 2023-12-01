@@ -13,8 +13,6 @@ contract Token {
     // Libs
     use dep::std::option::Option;
 
-    use dep::aztec::oracle::debug_log::{ debug_log, debug_log_field };
-
     use dep::safe_math::SafeU120;
 
     use dep::aztec::{
@@ -284,16 +282,14 @@ contract Token {
         amount: Field,
         secret: Field,
     ) -> Field {
-        debug_log("here");
         let pending_shields = storage.pending_shields;
         let secret_hash = compute_secret_hash(secret);
         let options = NoteGetterOptions::new().select(0, amount).select(1, secret_hash).set_limit(1);
         let notes = pending_shields.get_notes(options);
         let note = notes[0].unwrap_unchecked();
-        debug_log_field(note.amount);
         pending_shields.remove(note);
 
-        // storage.balances.at(to).add(SafeU120::new(amount));
+        storage.balances.at(to).add(SafeU120::new(amount));
 
         1
     }
@@ -344,27 +340,27 @@ contract Token {
     }
     // docs:end:transfer
 
-    // docs:start:burn
-    #[aztec(private)]
-    fn burn(
-        from: AztecAddress,
-        amount: Field,
-        nonce: Field,
-    ) -> Field {
-        if (from.address != context.msg_sender()) {
-            assert_current_call_valid_authwit(&mut context, from);
-        } else {
-            assert(nonce == 0, "invalid nonce");
-        }
+    // // docs:start:burn
+    // #[aztec(private)]
+    // fn burn(
+    //     from: AztecAddress,
+    //     amount: Field,
+    //     nonce: Field,
+    // ) -> Field {
+    //     if (from.address != context.msg_sender()) {
+    //         assert_current_call_valid_authwit(&mut context, from);
+    //     } else {
+    //         assert(nonce == 0, "invalid nonce");
+    //     }
 
-        storage.balances.at(from).sub(SafeU120::new(amount));
+    //     storage.balances.at(from).sub(SafeU120::new(amount));
 
-        let selector = compute_selector("_reduce_total_supply(Field)");
-        let _void = context.call_public_function(context.this_address(), selector, [amount]);
+    //     let selector = compute_selector("_reduce_total_supply(Field)");
+    //     let _void = context.call_public_function(context.this_address(), selector, [amount]);
 
-        1
-    }
-    // docs:end:burn
+    //     1
+    // }
+    // // docs:end:burn
 
     #[aztec(private)]
     fn escrow(
@@ -425,7 +421,7 @@ contract Token {
 
     #[aztec(private)]
     fn broadcast_escrow_note_for(
-        user: AztecAddress,
+        account: AztecAddress,
         owner: AztecAddress,
         amount: Field,
         randomness: Field
@@ -443,7 +439,7 @@ contract Token {
                 &mut context,
                 context.this_address(),
                 7,
-                get_public_key(user.address),
+                get_public_key(account.address),
                 note.serialize(),
             ); 
         } else {

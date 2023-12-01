@@ -97,11 +97,8 @@ export class TokenContract extends ContractBase {
     /** balance_of_public(owner: struct) */
     balance_of_public: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** broadcast_escrow_note_for(user: struct, owner: struct, amount: field, randomness: field) */
-    broadcast_escrow_note_for: ((user: AztecAddressLike, owner: AztecAddressLike, amount: FieldLike, randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** burn(from: struct, amount: field, nonce: field) */
-    burn: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** broadcast_escrow_note_for(account: struct, owner: struct, amount: field, randomness: field) */
+    broadcast_escrow_note_for: ((account: AztecAddressLike, owner: AztecAddressLike, amount: FieldLike, randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** burn_public(from: struct, amount: field, nonce: field) */
     burn_public: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
