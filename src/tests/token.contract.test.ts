@@ -118,9 +118,9 @@ describe('e2e_token_contract', () => {
         randomness = escrowsAgent[0].note.items[2].toBigInt();
         
         // Amount is correct
-        expect(escrowsAgent[0].note.items[0].toBigInt).toEqual(amount);
+        expect(escrowsAgent[0].note.items[0].toBigInt()).toEqual(amount);
         // Agent is correct
-        expect(escrowsAgent[0].note.items[1].toBigInt).toEqual(agent.getAddress().toBigInt());
+        expect(escrowsAgent[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
         // Randomness is not 0
         expect(randomness).not.toEqual(0n); 
       });
@@ -145,11 +145,11 @@ describe('e2e_token_contract', () => {
         expect(escrowsParticipant1.length).toBe(1);
 
         // Amount is correct
-        expect(escrowsParticipant1[0].note.items[0].toBigInt).toEqual(amount);
+        expect(escrowsParticipant1[0].note.items[0].toBigInt()).toEqual(amount);
         // Agent is correct
-        expect(escrowsParticipant1[0].note.items[1].toBigInt).toEqual(agent.getAddress().toBigInt());
+        expect(escrowsParticipant1[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
         // Randomness is correct
-        expect(escrowsParticipant1[0].note.items[2].toBigInt).toEqual(randomness); 
+        expect(escrowsParticipant1[0].note.items[2].toBigInt()).toEqual(randomness); 
       });
   
       it('settle_escrow', async () => {
