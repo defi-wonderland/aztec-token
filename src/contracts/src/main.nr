@@ -421,7 +421,7 @@ contract Token {
 
     #[aztec(private)]
     fn broadcast_escrow_note_for(
-        account: AztecAddress,
+        accounts: [AztecAddress; 4],
         owner: AztecAddress,
         amount: Field,
         randomness: Field
@@ -434,14 +434,19 @@ contract Token {
         if(notes[0].is_some()) {
             let note = notes[0].unwrap_unchecked();
 
-            // Emit encrypted log
-            emit_encrypted_log(
-                &mut context,
-                context.this_address(),
-                7,
-                get_public_key(account.address),
-                note.serialize(),
-            ); 
+            for i in 0..accounts.len() {
+                if(accounts[i].address != 0) {
+                    let encryption_pub_key = get_public_key(accounts[i].address);
+                    // Emit encrypted log
+                    emit_encrypted_log(
+                        &mut context,
+                        context.this_address(),
+                        7,
+                        encryption_pub_key,
+                        note.serialize(),
+                    );
+                }
+            }
         } else {
             // TODO: is there a way to revert directly?
             assert(false, "escrow does not exist");

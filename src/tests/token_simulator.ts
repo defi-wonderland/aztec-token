@@ -1,4 +1,4 @@
-import { TokenContract } from '../artifacts/Token.js';
+import { TokenContract } from '../contracts/artifacts/Token.js';
 import { AztecAddress, DebugLogger } from '@aztec/aztec.js';
 
 export class TokenSimulator {

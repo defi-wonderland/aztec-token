@@ -14,7 +14,7 @@
     "start:sandbox": "SANDBOX_VERSION=0.12.0 /bin/bash -c \"$(curl -fsSL 'https://sandbox.aztec.network')\" ",
     "formatting": "prettier --check ./src && eslint ./src",
     "formatting:fix": "prettier -w ./src",
-    "compile": "aztec-cli compile src/contracts --outdir ../artifacts --typescript ../artifacts",
+    "compile": "aztec-cli compile src/contracts -o './artifacts' -i './artifacts' -ts './artifacts'",
     "compile:local": "ts-node --esm ../../cli/src/bin/index.ts compile \"src/contracts\" --outdir \"../artifacts\" --typescript \"../artifacts\"",
     "test:integration": "NODE_NO_WARNINGS=1 node --experimental-vm-modules $(yarn bin jest) --runInBand"
   },

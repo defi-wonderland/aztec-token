@@ -13,11 +13,11 @@ import {
   getSandboxAccountsWallets,
   waitForSandbox
 } from '@aztec/aztec.js';
-import { CompleteAddress } from '@aztec/circuits.js';
+import { AztecAddress, CompleteAddress } from '@aztec/circuits.js';
 import { DebugLogger, createDebugLogger } from '@aztec/foundation/log';
 import { ExtendedNote } from '@aztec/types';
 import { afterEach, beforeAll, expect, jest } from '@jest/globals';
-import { TokenContract } from '../artifacts/Token.js';
+import { TokenContract } from '../contracts/artifacts/Token.js';
 import { TokenSimulator } from './token_simulator.js';
 
 // assumes sandbox is running locally, which this script does not trigger
@@ -30,6 +30,8 @@ const setupSandbox = async () => {
 };
 
 const TIMEOUT = 100_000;
+
+const ADDRESS_ZERO = AztecAddress.fromBigInt(0n);
 
 describe('e2e_token_contract', () => {
   jest.setTimeout(TIMEOUT);
@@ -126,21 +128,26 @@ describe('e2e_token_contract', () => {
       });
 
       it('creates the correct notes after broadcasting', async () => {
-        const filter = { owner: participant1.getAddress(), contractAddress: asset.address, storageSlot: new Fr(7) };
+        const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
 
-        let escrowsParticipant1 = await pxe.getNotes(filter);
+        let escrowsParticipant1 = await pxe.getNotes({ owner: participant1.getAddress(), ...filter });
 
         expect(escrowsParticipant1.length).toBe(0);
 
         // Now we call broadcast escrow note for participant1
         await asset.withWallet(agent).methods.broadcast_escrow_note_for(
-          participant1.getAddress(), 
+          [ 
+            participant1.getAddress(), 
+            participant2.getAddress(),
+            ADDRESS_ZERO,
+            ADDRESS_ZERO
+          ],
           agent.getAddress(),
           amount, 
           randomness
         ).send().wait();
 
-        let newEscrowsParticipant1 = await pxe.getNotes(filter);
+        let newEscrowsParticipant1 = await pxe.getNotes({ owner: participant1.getAddress(), ...filter });
 
         expect(newEscrowsParticipant1.length).toBe(1);
 
@@ -150,6 +157,17 @@ describe('e2e_token_contract', () => {
         expect(newEscrowsParticipant1[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
         // Randomness is correct
         expect(newEscrowsParticipant1[0].note.items[2].toBigInt()).toEqual(randomness); 
+
+        let newEscrowsParticipant2 = await pxe.getNotes({ owner: participant2.getAddress(), ...filter });
+
+        expect(newEscrowsParticipant2.length).toBe(1);
+
+        // Amount is correct
+        expect(newEscrowsParticipant2[0].note.items[0].toBigInt()).toEqual(amount);
+        // Agent is correct
+        expect(newEscrowsParticipant2[0].note.items[1].toBigInt()).toEqual(agent.getAddress().toBigInt());
+        // Randomness is correct
+        expect(newEscrowsParticipant2[0].note.items[2].toBigInt()).toEqual(randomness); 
       });
   
       it('settle_escrow', async () => {
