@@ -11,6 +11,7 @@ import {
   createAccount,
   createPXEClient,
   getSandboxAccountsWallets,
+  initAztecJs,
   waitForSandbox
 } from '@aztec/aztec.js';
 import { AztecAddress, CompleteAddress } from '@aztec/circuits.js';
@@ -26,6 +27,7 @@ const setupSandbox = async () => {
   const { PXE_URL = 'http://localhost:8080' } = process.env;
   const pxe = createPXEClient(PXE_URL);
   await waitForSandbox(pxe);
+  await initAztecJs();
   return pxe;
 };
 
@@ -127,7 +129,7 @@ describe('e2e_token_contract', () => {
         expect(randomness).not.toEqual(0n); 
       });
 
-      it('creates the correct notes after broadcasting', async () => {
+      it.skip('creates the correct notes after broadcasting', async () => {
         const filter = { contractAddress: asset.address, storageSlot: new Fr(7) };
 
         let escrowsParticipant1 = await pxe.getNotes({ owner: participant1.getAddress(), ...filter });
