@@ -2,10 +2,12 @@ use dep::std::option::Option;
 use dep::safe_math::SafeU120;
 use dep::aztec::{
   context::Context,
-  constants_gen::MAX_READ_REQUESTS_PER_CALL,
   state_vars::set::Set,
   types::address::AztecAddress,
 };
+
+use dep::protocol_types::constants::MAX_READ_REQUESTS_PER_CALL;
+
 use dep::aztec::note::{
     note_getter::view_notes,
     note_getter_options::{NoteGetterOptions, SortOrder},
@@ -22,7 +24,7 @@ use dep::aztec::oracle::{
     get_public_key::get_public_key,
 };
 
-use crate::types::token_note::{TokenNote, TOKEN_NOTE_LEN, TokenNoteMethods};
+use crate::types::owned_value_note::{OwnedValueNote, OWNED_VALUE_NOTE_LEN, OwnedValueNoteMethods};
 
 // A set implementing standard manipulation of balances.
 // Does not require spending key, but only knowledge.
@@ -30,7 +32,7 @@ use crate::types::token_note::{TokenNote, TOKEN_NOTE_LEN, TokenNoteMethods};
 struct BalanceSet {
   context: Context,
   owner: AztecAddress,
-  set: Set<TokenNote, TOKEN_NOTE_LEN>
+  set: Set<OwnedValueNote, OWNED_VALUE_NOTE_LEN>
 }
 
 impl BalanceSet {
@@ -39,7 +41,7 @@ impl BalanceSet {
     let set = Set {
         context,
         storage_slot,
-        note_interface: TokenNoteMethods,
+        note_interface: OwnedValueNoteMethods,
     };
     Self {
         context,
@@ -73,7 +75,7 @@ impl BalanceSet {
   }
 
     pub fn add(self: Self, addend: SafeU120) {
-        let mut addend_note = TokenNote::new(addend, self.owner);
+        let mut addend_note = OwnedValueNote::new(addend, self.owner);
 
         // docs:start:insert
         self.set.insert(&mut addend_note, true);
@@ -92,7 +94,7 @@ impl BalanceSet {
                 let note = maybe_notes[i].unwrap_unchecked();
 
                 // Removes the note from the owner's set of notes.
-                // This will call the the `compute_nullifer` function of the `token_note`
+                // This will call the the `compute_nullifer` function of the `owned_value_note`
                 // which require knowledge of the secret key (currently the users encryption key).
                 // The contract logic must ensure that the spending key is used as well.
                 // docs:start:remove
@@ -112,7 +114,7 @@ impl BalanceSet {
     }
 }
 
-pub fn filter_notes_min_sum(notes: [Option<TokenNote>; MAX_READ_REQUESTS_PER_CALL], min_sum: SafeU120) -> [Option<TokenNote>; MAX_READ_REQUESTS_PER_CALL] {
+pub fn filter_notes_min_sum(notes: [Option<OwnedValueNote>; MAX_READ_REQUESTS_PER_CALL], min_sum: SafeU120) -> [Option<OwnedValueNote>; MAX_READ_REQUESTS_PER_CALL] {
     let mut selected = [Option::none(); MAX_READ_REQUESTS_PER_CALL];
     let mut sum = SafeU120::min();
     for i in 0..notes.len() {
