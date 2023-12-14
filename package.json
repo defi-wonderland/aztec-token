@@ -6,8 +6,6 @@
   "main": "./dest/index.js",
   "scripts": {
     "build": "yarn clean && tsc -b && webpack",
-    "install:noir": "curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash noirup -v v0.17.0-aztec.5",
-    "install:sandbox": "docker pull aztecprotocol/aztec-sandbox:0.12.0",
     "clean": "rm -rf ./dest .tsbuildinfo",
     "start": "serve -p 3000 ./dest",
     "start:dev": "webpack serve --mode=development",
@@ -15,7 +13,6 @@
     "formatting": "prettier --check ./src && eslint ./src",
     "formatting:fix": "prettier -w ./src",
     "compile": "aztec-cli compile src/contracts -o './artifacts' -i './artifacts' -ts './artifacts'",
-    "compile:local": "ts-node --esm ../../cli/src/bin/index.ts compile \"src/contracts\" --outdir \"../artifacts\" --typescript \"../artifacts\"",
     "test:integration": "NODE_NO_WARNINGS=1 node --experimental-vm-modules $(yarn bin jest) --runInBand"
   },
   "jest": {
@@ -36,10 +33,10 @@
   },
   "dependencies": {
     "@aztec/aztec-ui": "^0.1.14",
-    "@aztec/aztec.js": "0.16.1",
-    "@aztec/circuits.js": "0.16.1",
-    "@aztec/foundation": "0.16.1",
-    "@aztec/types": "0.16.1",
+    "@aztec/aztec.js": "0.16.9",
+    "@aztec/circuits.js": "0.16.9",
+    "@aztec/foundation": "0.16.9",
+    "@aztec/types": "0.16.9",
     "classnames": "^2.3.2",
     "formik": "^2.4.3",
     "node-sass": "^9.0.0",

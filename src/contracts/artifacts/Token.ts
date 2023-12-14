@@ -97,8 +97,8 @@ export class TokenContract extends ContractBase {
     /** balance_of_public(owner: struct) */
     balance_of_public: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** broadcast_escrow_note_for(accounts: array, owner: struct, amount: field, randomness: field) */
-    broadcast_escrow_note_for: ((accounts: AztecAddressLike[], owner: AztecAddressLike, amount: FieldLike, randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** broadcast_escrow_note_for(accounts: array, randomness: field) */
+    broadcast_escrow_note_for: ((accounts: AztecAddressLike[], randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** burn_public(from: struct, amount: field, nonce: field) */
     burn_public: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -130,8 +130,8 @@ export class TokenContract extends ContractBase {
     /** set_minter(minter: struct, approve: boolean) */
     set_minter: ((minter: AztecAddressLike, approve: boolean) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** settle_escrow(owner: struct, recipient: struct, amount: field, randomness: field, nonce: field) */
-    settle_escrow: ((owner: AztecAddressLike, recipient: AztecAddressLike, amount: FieldLike, randomness: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** settle_escrow(owner: struct, recipient: struct, randomness: field, nonce: field) */
+    settle_escrow: ((owner: AztecAddressLike, recipient: AztecAddressLike, randomness: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** shield(from: struct, amount: field, secret_hash: field, nonce: field) */
     shield: ((from: AztecAddressLike, amount: FieldLike, secret_hash: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

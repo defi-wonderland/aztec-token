@@ -2,13 +2,13 @@
   
 use dep::std;
 use dep::aztec::context::{ PrivateContext, PublicContext };
-use dep::protocol_types::constants::RETURN_VALUES_LENGTH;
+use dep::protocol_types::{
+  address::AztecAddress,
+  abis::function_selector::FunctionSelector,
+  constants::RETURN_VALUES_LENGTH,
+};
 
 struct AccountsBroadcastEscrowNoteForStruct {
-  address: Field,
-}
-
-struct OwnerBroadcastEscrowNoteForStruct {
   address: Field,
 }
 
@@ -79,11 +79,11 @@ struct ToUnshieldStruct {
 
 // Interface for calling Token functions from a private context
 struct TokenPrivateContextInterface {
-  address: Field,
+  address: AztecAddress,
 }
 
 impl TokenPrivateContextInterface {
-  pub fn at(address: Field) -> Self {
+  pub fn at(address: AztecAddress) -> Self {
       Self {
           address,
       }
@@ -93,20 +93,16 @@ impl TokenPrivateContextInterface {
     self,
     context: &mut PrivateContext,
     accounts: [AccountsBroadcastEscrowNoteForStruct;4],
-    owner: OwnerBroadcastEscrowNoteForStruct,
-    amount: Field,
     randomness: Field
   ) -> [Field; RETURN_VALUES_LENGTH] {
-    let mut serialized_args = [0; 7];
+    let mut serialized_args = [0; 5];
     serialized_args[0] = accounts[0].address;
     serialized_args[1] = accounts[1].address;
     serialized_args[2] = accounts[2].address;
     serialized_args[3] = accounts[3].address;
-    serialized_args[4] = owner.address;
-    serialized_args[5] = amount;
-    serialized_args[6] = randomness;
+    serialized_args[4] = randomness;
 
-    context.call_private_function(self.address, 0x2d797468, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0x2426c148), serialized_args)
   }
   
 
@@ -122,7 +118,7 @@ impl TokenPrivateContextInterface {
     serialized_args[1] = amount;
     serialized_args[2] = nonce;
 
-    context.call_public_function(self.address, 0xb0e964d5, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0xb0e964d5), serialized_args)
   }
   
 
@@ -140,7 +136,7 @@ impl TokenPrivateContextInterface {
     serialized_args[2] = amount;
     serialized_args[3] = nonce;
 
-    context.call_private_function(self.address, 0x54f7b220, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0x54f7b220), serialized_args)
   }
   
 
@@ -154,7 +150,7 @@ impl TokenPrivateContextInterface {
     serialized_args[0] = amount;
     serialized_args[1] = secret_hash;
 
-    context.call_public_function(self.address, 0x10763932, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x10763932), serialized_args)
   }
   
 
@@ -168,7 +164,7 @@ impl TokenPrivateContextInterface {
     serialized_args[0] = to.address;
     serialized_args[1] = amount;
 
-    context.call_public_function(self.address, 0x6bfd1d5b, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x6bfd1d5b), serialized_args)
   }
   
 
@@ -184,7 +180,7 @@ impl TokenPrivateContextInterface {
     serialized_args[1] = amount;
     serialized_args[2] = secret;
 
-    context.call_private_function(self.address, 0xb77168f2, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0xb77168f2), serialized_args)
   }
   
 
@@ -196,7 +192,7 @@ impl TokenPrivateContextInterface {
     let mut serialized_args = [0; 1];
     serialized_args[0] = new_admin.address;
 
-    context.call_public_function(self.address, 0x41b90896, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x41b90896), serialized_args)
   }
   
 
@@ -210,7 +206,7 @@ impl TokenPrivateContextInterface {
     serialized_args[0] = minter.address;
     serialized_args[1] = approve as Field;
 
-    context.call_public_function(self.address, 0x7f020b80, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x7f020b80), serialized_args)
   }
   
 
@@ -219,18 +215,16 @@ impl TokenPrivateContextInterface {
     context: &mut PrivateContext,
     owner: OwnerSettleEscrowStruct,
     recipient: RecipientSettleEscrowStruct,
-    amount: Field,
     randomness: Field,
     nonce: Field
   ) -> [Field; RETURN_VALUES_LENGTH] {
-    let mut serialized_args = [0; 5];
+    let mut serialized_args = [0; 4];
     serialized_args[0] = owner.address;
     serialized_args[1] = recipient.address;
-    serialized_args[2] = amount;
-    serialized_args[3] = randomness;
-    serialized_args[4] = nonce;
+    serialized_args[2] = randomness;
+    serialized_args[3] = nonce;
 
-    context.call_private_function(self.address, 0x9cde20b1, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0x510f50d4), serialized_args)
   }
   
 
@@ -248,7 +242,7 @@ impl TokenPrivateContextInterface {
     serialized_args[2] = secret_hash;
     serialized_args[3] = nonce;
 
-    context.call_public_function(self.address, 0x1d24add0, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x1d24add0), serialized_args)
   }
   
 
@@ -266,7 +260,7 @@ impl TokenPrivateContextInterface {
     serialized_args[2] = amount;
     serialized_args[3] = nonce;
 
-    context.call_private_function(self.address, 0xb1aa668a, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0xb1aa668a), serialized_args)
   }
   
 
@@ -284,7 +278,7 @@ impl TokenPrivateContextInterface {
     serialized_args[2] = amount;
     serialized_args[3] = nonce;
 
-    context.call_public_function(self.address, 0x7db8f449, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x7db8f449), serialized_args)
   }
   
 
@@ -302,7 +296,7 @@ impl TokenPrivateContextInterface {
     serialized_args[2] = amount;
     serialized_args[3] = nonce;
 
-    context.call_private_function(self.address, 0x78303b89, serialized_args)
+    context.call_private_function(self.address, FunctionSelector::from_field(0x78303b89), serialized_args)
   }
   
 }
@@ -312,11 +306,11 @@ impl TokenPrivateContextInterface {
 
 // Interface for calling Token functions from a public context
 struct TokenPublicContextInterface {
-  address: Field,
+  address: AztecAddress,
 }
 
 impl TokenPublicContextInterface {
-  pub fn at(address: Field) -> Self {
+  pub fn at(address: AztecAddress) -> Self {
       Self {
           address,
       }
@@ -334,7 +328,7 @@ impl TokenPublicContextInterface {
     serialized_args[1] = amount;
     serialized_args[2] = nonce;
 
-    context.call_public_function(self.address, 0xb0e964d5, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0xb0e964d5), serialized_args)
   }
   
 
@@ -348,7 +342,7 @@ impl TokenPublicContextInterface {
     serialized_args[0] = amount;
     serialized_args[1] = secret_hash;
 
-    context.call_public_function(self.address, 0x10763932, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x10763932), serialized_args)
   }
   
 
@@ -362,7 +356,7 @@ impl TokenPublicContextInterface {
     serialized_args[0] = to.address;
     serialized_args[1] = amount;
 
-    context.call_public_function(self.address, 0x6bfd1d5b, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x6bfd1d5b), serialized_args)
   }
   
 
@@ -374,7 +368,7 @@ impl TokenPublicContextInterface {
     let mut serialized_args = [0; 1];
     serialized_args[0] = new_admin.address;
 
-    context.call_public_function(self.address, 0x41b90896, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x41b90896), serialized_args)
   }
   
 
@@ -388,7 +382,7 @@ impl TokenPublicContextInterface {
     serialized_args[0] = minter.address;
     serialized_args[1] = approve as Field;
 
-    context.call_public_function(self.address, 0x7f020b80, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x7f020b80), serialized_args)
   }
   
 
@@ -406,7 +400,7 @@ impl TokenPublicContextInterface {
     serialized_args[2] = secret_hash;
     serialized_args[3] = nonce;
 
-    context.call_public_function(self.address, 0x1d24add0, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x1d24add0), serialized_args)
   }
   
 
@@ -424,7 +418,7 @@ impl TokenPublicContextInterface {
     serialized_args[2] = amount;
     serialized_args[3] = nonce;
 
-    context.call_public_function(self.address, 0x7db8f449, serialized_args)
+    context.call_public_function(self.address, FunctionSelector::from_field(0x7db8f449), serialized_args)
   }
   
 }

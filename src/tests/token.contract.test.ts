@@ -50,7 +50,7 @@ describe('e2e_token_contract', () => {
 
     wallets = await getSandboxAccountsWallets(pxe);
 
-    logger(`Wallets: ${wallets.map(w => w.getAddress().toString())}`);
+    console.log(`Wallets: ${wallets.map(w => w.getAddress().toString())}`);
 
     asset = await TokenContract.deploy(wallets[0], wallets[0].getAddress()).send().deployed();
     logger(`Token deployed to ${asset.address}`);
@@ -142,8 +142,6 @@ describe('e2e_token_contract', () => {
             ADDRESS_ZERO,
             ADDRESS_ZERO
           ],
-          agent.getAddress(),
-          amount, 
           randomness
         ).send().wait();
 
@@ -175,7 +173,7 @@ describe('e2e_token_contract', () => {
         const participant1Balance = await asset.methods.balance_of_private(participant1.getAddress()).view();
 
         const randomness = escrows[0]._value.randomness;
-        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0).send();
+        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), randomness, 0).send();
         const receipt = await txClaim.wait();
         expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.settle_escrow(participant1.getAddress(), amount);
@@ -221,7 +219,7 @@ describe('e2e_token_contract', () => {
         expect(userBalance).toBe(0n);
 
         const randomness = escrows[0]._value.randomness;
-        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), newUser.getAddress(), amount, randomness, 0).send();
+        const txClaim = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), newUser.getAddress(), randomness, 0).send();
         const receipt = await txClaim.wait();
         expect(receipt.status).toBe(TxStatus.MINED);
         tokenSim.settle_escrow(newUser.getAddress(), amount);
@@ -264,7 +262,7 @@ describe('e2e_token_contract', () => {
         const randomness = escrows[0]._value.randomness;
 
         const nonce = Fr.random();
-        const action = asset.withWallet(newUser).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, nonce);
+        const action = asset.withWallet(newUser).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), randomness, nonce);
         await approveAction(action, newUser, agent, nonce);
         
         const tx = action.send();
@@ -321,19 +319,19 @@ describe('e2e_token_contract', () => {
         it('reverts when calling from a different address and with invalid nonce', async () => {
           const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
           const randomness = escrows[0]._value.randomness;
-          const settleTx = asset.withWallet(wallets[0]).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 0);
+          const settleTx = asset.withWallet(wallets[0]).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), randomness, 0);
           await expect(settleTx.simulate()).rejects.toThrowError();
         });
 
         it('reverts when calling from the correct agent but with an invalid nonce', async () => {
           const escrows = await asset.withWallet(wallets[0]).methods.get_escrows(0n).view();
           const randomness = escrows[0]._value.randomness;
-          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, randomness, 1n);
+          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), randomness, 1n);
           await expect(settleTx.simulate()).rejects.toThrowError('invalid nonce');
         })
 
         it('reverts if escrow does not exist', async () => {
-          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), amount, 0n, 0);
+          const settleTx = asset.withWallet(agent).methods.settle_escrow(agent.getAddress(), participant1.getAddress(), 0n, 0);
           await expect(settleTx.simulate()).rejects.toThrowError('escrow does not exist');
         });
       })
@@ -367,7 +365,10 @@ describe('e2e_token_contract', () => {
     // Mint private tokens
     const secret = Fr.random();
     const secretHash = await computeMessageSecretHash(secret);
-  
+    console.log("================================================")
+    console.log(asset.address.toString())
+    console.log(minter.getAddress().toString())
+    console.log("================================================")
     const receipt = await asset
       .withWallet(minter)
       .methods.mint_private(amount, secretHash)

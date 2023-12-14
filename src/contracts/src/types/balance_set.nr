@@ -2,10 +2,12 @@ use dep::std::option::Option;
 use dep::safe_math::SafeU120;
 use dep::aztec::{
   context::Context,
-  constants_gen::MAX_READ_REQUESTS_PER_CALL,
   state_vars::set::Set,
   types::address::AztecAddress,
 };
+
+use dep::protocol_types::constants::MAX_READ_REQUESTS_PER_CALL;
+
 use dep::aztec::note::{
     note_getter::view_notes,
     note_getter_options::{NoteGetterOptions, SortOrder},

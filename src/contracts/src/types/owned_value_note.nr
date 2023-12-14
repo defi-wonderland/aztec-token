@@ -6,10 +6,12 @@ use dep::aztec::{
     },
     hash::pedersen_hash,
     context::PrivateContext,
-    constants_gen::MAX_READ_REQUESTS_PER_CALL,
     state_vars::set::Set,
     log::emit_encrypted_log,
 };
+
+use dep::protocol_types::constants::MAX_READ_REQUESTS_PER_CALL;
+
 use dep::aztec::types::point::Point;
 use dep::aztec::types::address::AztecAddress;
 use dep::aztec::oracle::{

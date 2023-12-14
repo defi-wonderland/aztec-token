@@ -387,7 +387,7 @@ contract Token {
     }
 
     #[aztec(private)]
-    fn settle_escrow(owner: AztecAddress, recipient: AztecAddress, amount: Field, randomness: Field, nonce: Field) -> Field {
+    fn settle_escrow(owner: AztecAddress, recipient: AztecAddress, randomness: Field, nonce: Field) -> Field {
         if (owner.address != context.msg_sender()) {
             assert_current_call_valid_authwit(&mut context, owner);
         } else {
@@ -397,7 +397,7 @@ contract Token {
         let escrows = storage.escrows;
 
         // Filter the note
-        let options = NoteGetterOptions::new().select(0, amount).select(1, owner.address).select(2, randomness).set_limit(1);
+        let options = NoteGetterOptions::new().select(1, owner.address).select(2, randomness).set_limit(1);
         let notes = escrows.get_notes(options);
         
         if(notes[0].is_some()) {
@@ -410,7 +410,7 @@ contract Token {
             escrows.remove(note); 
 
             // Pay the recipient
-            storage.balances.at(recipient).add(SafeU120::new(amount));
+            storage.balances.at(recipient).add(note.amount);
         } else {
             // TODO: is there a way to revert directly?
             assert(false, "escrow does not exist");
@@ -422,13 +422,11 @@ contract Token {
     #[aztec(private)]
     fn broadcast_escrow_note_for(
         accounts: [AztecAddress; 4],
-        owner: AztecAddress,
-        amount: Field,
         randomness: Field
     ) -> Field {
         let escrows = storage.escrows;
 
-        let options = NoteGetterOptions::new().select(0, amount).select(1, owner.address).select(2, randomness).set_limit(1);
+        let options = NoteGetterOptions::new().select(2, randomness).set_limit(1);
         let notes = escrows.get_notes(options);
         
         if(notes[0].is_some()) {
