@@ -1,4 +1,4 @@
-import { TokenContract } from '../artifacts/Token.js';
+import { TokenContract } from '../contracts/artifacts/Token.js';
 import { AztecAddress, DebugLogger } from '@aztec/aztec.js';
 
 export class TokenSimulator {
@@ -69,6 +69,17 @@ export class TokenSimulator {
     this.balancePublic.set(from, fromBalance - amount);
 
     this.totalSupply -= amount;
+  }
+
+  public escrow(from: AztecAddress, amount: bigint) {
+    const fromBalance = this.balancesPrivate.get(from) || 0n;
+    expect(fromBalance).toBeGreaterThanOrEqual(amount);
+    this.balancesPrivate.set(from, fromBalance - amount);
+  }
+
+  public settle_escrow(recipient: AztecAddress, amount: bigint) {
+    const toBalance = this.balancesPrivate.get(recipient) || 0n;
+    this.balancesPrivate.set(recipient, toBalance + amount);
   }
 
   public balanceOfPublic(address: AztecAddress) {

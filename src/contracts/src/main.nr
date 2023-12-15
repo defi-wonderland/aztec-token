@@ -20,6 +20,7 @@ contract Token {
             note_getter_options::NoteGetterOptions,
             note_header::NoteHeader,
             utils as note_utils,
+            note_viewer_options::NoteViewerOptions
         },
         context::{PrivateContext, PublicContext, Context},
         hash::{compute_secret_hash},
@@ -31,6 +32,11 @@ contract Token {
         },
         types::address::{AztecAddress},
         selector::compute_selector,
+        log::emit_encrypted_log,
+        oracle::{
+            get_public_key::get_public_key,
+            rand::rand
+        }
     };
 
     // docs:start:import_authwit
@@ -44,9 +50,9 @@ contract Token {
 
     use crate::types::{
         transparent_note::{TransparentNote, TransparentNoteMethods, TRANSPARENT_NOTE_LEN},
-        token_note::{TokenNote, TokenNoteMethods, TOKEN_NOTE_LEN},
+        owned_value_note::{OwnedValueNote, OWNED_VALUE_NOTE_LEN, OwnedValueNoteMethods},
         balances_map::{BalancesMap},
-        safe_u120_serialization::{SafeU120SerializationMethods, SAFE_U120_SERIALIZED_LEN}
+        safe_u120_serialization::{SafeU120SerializationMethods, SAFE_U120_SERIALIZED_LEN},
     };
     // docs:end::imports
 
@@ -66,12 +72,13 @@ contract Token {
         pending_shields: Set<TransparentNote, TRANSPARENT_NOTE_LEN>,
         // docs:end:storage_pending_shields
         public_balances: Map<PublicState<SafeU120, SAFE_U120_SERIALIZED_LEN>>,
+        escrows: Set<OwnedValueNote, OWNED_VALUE_NOTE_LEN>,
     }
     // docs:end:storage_struct
 
     // docs:start:storage_init
     impl Storage {
-        fn init(context: Context) -> pub Self {
+        fn init(context: Context) -> Self {
             Storage {
                 // docs:start:storage_admin_init
                 admin: PublicState::new(
@@ -113,6 +120,7 @@ contract Token {
                         )
                     },
                 ),
+                escrows: Set::new(context, 7, OwnedValueNoteMethods),
             }
         }
     }
@@ -332,10 +340,32 @@ contract Token {
     }
     // docs:end:transfer
 
-    // docs:start:burn
+    // // docs:start:burn
+    // #[aztec(private)]
+    // fn burn(
+    //     from: AztecAddress,
+    //     amount: Field,
+    //     nonce: Field,
+    // ) -> Field {
+    //     if (from.address != context.msg_sender()) {
+    //         assert_current_call_valid_authwit(&mut context, from);
+    //     } else {
+    //         assert(nonce == 0, "invalid nonce");
+    //     }
+
+    //     storage.balances.at(from).sub(SafeU120::new(amount));
+
+    //     let selector = compute_selector("_reduce_total_supply(Field)");
+    //     let _void = context.call_public_function(context.this_address(), selector, [amount]);
+
+    //     1
+    // }
+    // // docs:end:burn
+
     #[aztec(private)]
-    fn burn(
+    fn escrow(
         from: AztecAddress,
+        owner: AztecAddress,
         amount: Field,
         nonce: Field,
     ) -> Field {
@@ -345,14 +375,89 @@ contract Token {
             assert(nonce == 0, "invalid nonce");
         }
 
-        storage.balances.at(from).sub(SafeU120::new(amount));
+        // Remove the tokens from the user
+        let safe_amount = SafeU120::new(amount);
+        storage.balances.at(from).sub(safe_amount);
 
-        let selector = compute_selector("_reduce_total_supply(Field)");
-        let _void = context.call_public_function(context.this_address(), selector, [amount]);
+        // create the EscrowNote
+        let mut escrow_note = OwnedValueNote::new(SafeU120::new(amount), owner);
+        storage.escrows.insert(&mut escrow_note, true);
+
+        escrow_note.randomness
+    }
+
+    #[aztec(private)]
+    fn settle_escrow(owner: AztecAddress, recipient: AztecAddress, randomness: Field, nonce: Field) -> Field {
+        if (owner.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, owner);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
+
+        let escrows = storage.escrows;
+
+        // Filter the note
+        let options = NoteGetterOptions::new().select(1, owner.address).select(2, randomness).set_limit(1);
+        let notes = escrows.get_notes(options);
+        
+        if(notes[0].is_some()) {
+            let note = notes[0].unwrap_unchecked();
+
+            // Check the msg sender is the owner
+            assert(note.owner.address == owner.address, "msg sender is not the owner");
+
+            // Nullify the note
+            escrows.remove(note); 
+
+            // Pay the recipient
+            storage.balances.at(recipient).add(note.amount);
+        } else {
+            // TODO: is there a way to revert directly?
+            assert(false, "escrow does not exist");
+        }
 
         1
     }
-    // docs:end:burn
+
+    #[aztec(private)]
+    fn broadcast_escrow_note_for(
+        accounts: [AztecAddress; 4],
+        randomness: Field
+    ) -> Field {
+        let escrows = storage.escrows;
+
+        let options = NoteGetterOptions::new().select(2, randomness).set_limit(1);
+        let notes = escrows.get_notes(options);
+        
+        if(notes[0].is_some()) {
+            let note = notes[0].unwrap_unchecked();
+
+            for i in 0..accounts.len() {
+                if(accounts[i].address != 0) {
+                    let encryption_pub_key = get_public_key(accounts[i].address);
+                    // Emit encrypted log
+                    emit_encrypted_log(
+                        &mut context,
+                        context.this_address(),
+                        7,
+                        encryption_pub_key,
+                        note.serialize(),
+                    );
+                }
+            }
+        } else {
+            // TODO: is there a way to revert directly?
+            assert(false, "escrow does not exist");
+        }
+
+        1
+    }
+
+    unconstrained fn get_escrows(offset: u32) -> [Option<OwnedValueNote>; 10] {
+        // TODO: add pagination
+        let options = NoteViewerOptions::new().set_offset(offset);
+        storage.escrows.view_notes(options)
+    }
 
     // docs:start:initialize
     #[aztec(public)]
@@ -433,12 +538,12 @@ contract Token {
     // Computes note hash and nullifier.
     // Note 1: Needs to be defined by every contract producing logs.
     // Note 2: Having it in all the contracts gives us the ability to compute the note hash and nullifier differently for different kind of notes.
-    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, preimage: [Field; TOKEN_NOTE_LEN]) -> [Field; 4] {
+    unconstrained fn compute_note_hash_and_nullifier(contract_address: Field, nonce: Field, storage_slot: Field, serialized_note: [Field; OWNED_VALUE_NOTE_LEN]) -> [Field; 4] {
         let note_header = NoteHeader::new(contract_address, nonce, storage_slot);
         if (storage_slot == 5) {
-            note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, preimage)
+            note_utils::compute_note_hash_and_nullifier(TransparentNoteMethods, note_header, serialized_note)
         } else {
-            note_utils::compute_note_hash_and_nullifier(TokenNoteMethods, note_header, preimage)
+            note_utils::compute_note_hash_and_nullifier(OwnedValueNoteMethods, note_header, serialized_note)
         }
     }
     // docs:end:compute_note_hash_and_nullifier
