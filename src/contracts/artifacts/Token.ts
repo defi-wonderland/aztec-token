@@ -109,6 +109,9 @@ export class TokenContract extends ContractBase {
     /** escrow(from: struct, owner: struct, amount: field, nonce: field) */
     escrow: ((from: AztecAddressLike, owner: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** get_escrow(randomness: field) */
+    get_escrow: ((randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** get_escrows(offset: integer) */
     get_escrows: ((offset: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 

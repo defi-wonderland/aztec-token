@@ -136,6 +136,18 @@ impl TokenPrivateContextInterface {
   }
   
 
+  pub fn get_escrow(
+    self,
+    context: &mut PrivateContext,
+    randomness: Field
+  ) -> [Field; RETURN_VALUES_LENGTH] {
+    let mut serialized_args = [0; 1];
+    serialized_args[0] = randomness;
+
+    context.call_private_function(self.address, 0x37785550, serialized_args)
+  }
+  
+
   pub fn mint_private(
     self,
     context: &mut PrivateContext,

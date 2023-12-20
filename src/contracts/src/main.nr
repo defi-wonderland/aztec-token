@@ -189,6 +189,7 @@ contract Token {
         assert(storage.minters.at(context.msg_sender()).read(), "caller is not minter");
         let pending_shields = storage.pending_shields;
         let mut note = TransparentNote::new(amount, secret_hash);
+
         let supply = storage.total_supply.read().add(SafeU120::new(amount));
 
         storage.total_supply.write(supply);
@@ -451,6 +452,20 @@ contract Token {
         }
 
         1
+    }
+
+    #[aztec(private)]
+    fn get_escrow(
+        randomness: Field
+    ) -> OwnedValueNote {
+        let escrows = storage.escrows;
+
+        let options = NoteGetterOptions::new().select(2, randomness).set_limit(1);
+        let notes = escrows.get_notes(options);
+        notes[0].unwrap_unchecked()
+        // let escrow_note = notes[0].unwrap_unchecked();
+
+        // [escrow_note.amount.value as Field, escrow_note.owner.address, escrow_note.randomness]
     }
 
     unconstrained fn get_escrows(offset: u32) -> [Option<OwnedValueNote>; 10] {
