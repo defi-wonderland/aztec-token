@@ -318,6 +318,27 @@ contract Token {
     }
     // docs:end:unshield
 
+    #[aztec(private)]
+    fn shield_private(
+        from: AztecAddress,
+        to: AztecAddress,
+        amount: Field,
+        nonce: Field,
+    ) -> Field {
+        if (from.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
+
+        storage.balances.at(to).add(SafeU120::new(amount));
+
+        let selector = compute_selector("_reduce_public_balance((Field),Field)");
+        let _void = context.call_public_function(context.this_address(), selector, [from.address, amount]);
+
+        1
+    }
+
     // docs:start:transfer
     #[aztec(private)]
     fn transfer(
@@ -340,27 +361,27 @@ contract Token {
     }
     // docs:end:transfer
 
-    // // docs:start:burn
-    // #[aztec(private)]
-    // fn burn(
-    //     from: AztecAddress,
-    //     amount: Field,
-    //     nonce: Field,
-    // ) -> Field {
-    //     if (from.address != context.msg_sender()) {
-    //         assert_current_call_valid_authwit(&mut context, from);
-    //     } else {
-    //         assert(nonce == 0, "invalid nonce");
-    //     }
+    // docs:start:burn
+    #[aztec(private)]
+    fn burn(
+        from: AztecAddress,
+        amount: Field,
+        nonce: Field,
+    ) -> Field {
+        if (from.address != context.msg_sender()) {
+            assert_current_call_valid_authwit(&mut context, from);
+        } else {
+            assert(nonce == 0, "invalid nonce");
+        }
 
-    //     storage.balances.at(from).sub(SafeU120::new(amount));
+        storage.balances.at(from).sub(SafeU120::new(amount));
 
-    //     let selector = compute_selector("_reduce_total_supply(Field)");
-    //     let _void = context.call_public_function(context.this_address(), selector, [amount]);
+        let selector = compute_selector("_reduce_total_supply(Field)");
+        let _void = context.call_public_function(context.this_address(), selector, [amount]);
 
-    //     1
-    // }
-    // // docs:end:burn
+        1
+    }
+    // docs:end:burn
 
     #[aztec(private)]
     fn escrow(
@@ -492,6 +513,15 @@ contract Token {
         storage.total_supply.write(new_supply);
     }
     // docs:end:reduce_total_supply
+
+    #[aztec(public)]
+    internal fn _reduce_public_balance(
+        from: AztecAddress,
+        amount: Field,
+    ) {
+        let new_balance = storage.public_balances.at(from.address).read().sub(SafeU120::new(amount));
+        storage.public_balances.at(from.address).write(new_balance);
+    }
 
     /// Unconstrained ///
 
