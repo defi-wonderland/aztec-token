@@ -340,6 +340,48 @@ describe('e2e_token_contract', () => {
     });
   });
 
+  describe('shield_private', () => {
+    let amount: bigint = 1000n;
+    let mintAmount: bigint = 10000n;
+  
+    let user: AccountWalletWithPrivateKey;
+    let from: CompleteAddress;
+
+    let userPrivateBalanceBefore: bigint;
+    let minterPublicBalanceBefore: bigint;
+    
+    beforeAll(async () => {
+      from = wallets[0].getCompleteAddress();
+      user = await createAccount(pxe);
+
+      await mintPublicTokens(wallets[0], wallets[0], mintAmount);
+
+      userPrivateBalanceBefore = await asset.methods.balance_of_private(user.getAddress()).view();
+      minterPublicBalanceBefore = await asset.methods.balance_of_public(wallets[0].getAddress()).view();
+    });
+
+    it('reverts if not enough balance', async () => {
+      const tx = asset.withWallet(wallets[0]).methods.shield_private(from.address, user.getAddress(), minterPublicBalanceBefore + 1n, 0);
+      await expect(tx.simulate()).rejects.toThrowError();
+    });
+
+    it('tx is mined', async () => {
+      const tx = asset.withWallet(wallets[0]).methods.shield_private(from.address, user.getAddress(), amount, 0);
+      const receipt = await tx.send().wait();
+      expect(receipt.status).toBe(TxStatus.MINED);
+      tokenSim.shieldPrivate(from.address, user.getAddress(), amount);
+    });
+
+    it('decreases the public balance of the sender', async () => {
+      const minterPublicBalanceAfter = await asset.methods.balance_of_public(wallets[0].getAddress()).view();
+      expect(minterPublicBalanceAfter).toEqual(minterPublicBalanceBefore - amount);
+    });
+
+    it('increases the private balance of the receiver', async () => {
+      const userPrivateBalanceAfter = await asset.methods.balance_of_private(user.getAddress()).view();
+      expect(userPrivateBalanceAfter).toEqual(userPrivateBalanceBefore + amount);
+    });
+  });
   const addPendingShieldNoteToPXE = async (
     account: AccountWalletWithPrivateKey,
     amount: bigint,
@@ -358,7 +400,21 @@ describe('e2e_token_contract', () => {
       )
     );
   };
-  
+
+  const mintPublicTokens = async (
+    account: AccountWalletWithPrivateKey,
+    minter: AccountWalletWithPrivateKey, 
+    amount: bigint
+  ) => {
+    const tx = asset
+      .withWallet(minter)
+      .methods.mint_public(account.getAddress(), amount)
+      .send();
+    const receipt = await tx.wait();
+    expect(receipt.status).toBe(TxStatus.MINED);
+    tokenSim.mintPublic(account.getAddress(), amount);
+  };
+
   const mintTokenFor = async (
     account: AccountWalletWithPrivateKey,
     minter: AccountWalletWithPrivateKey,
@@ -367,10 +423,7 @@ describe('e2e_token_contract', () => {
     // Mint private tokens
     const secret = Fr.random();
     const secretHash = await computeMessageSecretHash(secret);
-    console.log("================================================")
-    console.log(asset.address.toString())
-    console.log(minter.getAddress().toString())
-    console.log("================================================")
+
     const receipt = await asset
       .withWallet(minter)
       .methods.mint_private(amount, secretHash)

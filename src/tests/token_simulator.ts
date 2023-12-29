@@ -70,6 +70,15 @@ export class TokenSimulator {
 
     this.totalSupply -= amount;
   }
+  
+  public shieldPrivate(from: AztecAddress, to: AztecAddress, amount: bigint) {
+    const fromBalance = this.balancePublic.get(from) || 0n;
+    const toBalance = this.balancesPrivate.get(to) || 0n;
+    expect(fromBalance).toBeGreaterThanOrEqual(amount);
+    
+    this.balancePublic.set(from, fromBalance - amount);
+    this.balancesPrivate.set(to, toBalance + amount);
+  }
 
   public escrow(from: AztecAddress, amount: bigint) {
     const fromBalance = this.balancesPrivate.get(from) || 0n;
