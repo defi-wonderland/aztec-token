@@ -85,6 +85,9 @@ export class TokenContract extends ContractBase {
     /** _initialize(new_admin: struct) */
     _initialize: ((new_admin: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** _reduce_public_balance(from: struct, amount: field) */
+    _reduce_public_balance: ((from: AztecAddressLike, amount: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** _reduce_total_supply(amount: field) */
     _reduce_total_supply: ((amount: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
@@ -99,6 +102,9 @@ export class TokenContract extends ContractBase {
 
     /** broadcast_escrow_note_for(accounts: array, randomness: field) */
     broadcast_escrow_note_for: ((accounts: AztecAddressLike[], randomness: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** burn(from: struct, amount: field, nonce: field) */
+    burn: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** burn_public(from: struct, amount: field, nonce: field) */
     burn_public: ((from: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
@@ -138,6 +144,9 @@ export class TokenContract extends ContractBase {
 
     /** shield(from: struct, amount: field, secret_hash: field, nonce: field) */
     shield: ((from: AztecAddressLike, amount: FieldLike, secret_hash: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** shield_private(from: struct, to: struct, amount: field, nonce: field) */
+    shield_private: ((from: AztecAddressLike, to: AztecAddressLike, amount: FieldLike, nonce: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** total_supply() */
     total_supply: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;

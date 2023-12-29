@@ -8,6 +8,10 @@ struct AccountsBroadcastEscrowNoteForStruct {
   address: Field,
 }
 
+struct FromBurnStruct {
+  address: Field,
+}
+
 struct FromBurnPublicStruct {
   address: Field,
 }
@@ -45,6 +49,14 @@ struct RecipientSettleEscrowStruct {
 }
 
 struct FromShieldStruct {
+  address: Field,
+}
+
+struct FromShieldPrivateStruct {
+  address: Field,
+}
+
+struct ToShieldPrivateStruct {
   address: Field,
 }
 
@@ -99,6 +111,22 @@ impl TokenPrivateContextInterface {
     serialized_args[4] = randomness;
 
     context.call_private_function(self.address, 0x2426c148, serialized_args)
+  }
+  
+
+  pub fn burn(
+    self,
+    context: &mut PrivateContext,
+    from: FromBurnStruct,
+    amount: Field,
+    nonce: Field
+  ) -> [Field; RETURN_VALUES_LENGTH] {
+    let mut serialized_args = [0; 3];
+    serialized_args[0] = from.address;
+    serialized_args[1] = amount;
+    serialized_args[2] = nonce;
+
+    context.call_private_function(self.address, 0xd4fcc96e, serialized_args)
   }
   
 
@@ -251,6 +279,24 @@ impl TokenPrivateContextInterface {
     serialized_args[3] = nonce;
 
     context.call_public_function(self.address, 0x1d24add0, serialized_args)
+  }
+  
+
+  pub fn shield_private(
+    self,
+    context: &mut PrivateContext,
+    from: FromShieldPrivateStruct,
+    to: ToShieldPrivateStruct,
+    amount: Field,
+    nonce: Field
+  ) -> [Field; RETURN_VALUES_LENGTH] {
+    let mut serialized_args = [0; 4];
+    serialized_args[0] = from.address;
+    serialized_args[1] = to.address;
+    serialized_args[2] = amount;
+    serialized_args[3] = nonce;
+
+    context.call_private_function(self.address, 0x319ca21e, serialized_args)
   }
   
 
