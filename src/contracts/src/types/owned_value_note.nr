@@ -10,13 +10,14 @@ use dep::aztec::{
     log::emit_encrypted_log,
 };
 
-use dep::protocol_types::constants::MAX_READ_REQUESTS_PER_CALL;
 
-use dep::aztec::types::point::Point;
-use dep::aztec::types::address::AztecAddress;
+use dep::aztec::protocol_types::{
+    constants::MAX_READ_REQUESTS_PER_CALL,
+    address::AztecAddress,
+};
+
 use dep::aztec::oracle::{
     rand::rand,
-    get_secret_key::get_secret_key,
     get_public_key::get_public_key,
 };
 
@@ -50,13 +51,13 @@ impl OwnedValueNote {
     }
 
     pub fn serialize(self) -> [Field; OWNED_VALUE_NOTE_LEN] {
-        [self.amount.value as Field, self.owner.address, self.randomness]
+        [self.amount.value as Field, self.owner.to_field(), self.randomness]
     }
 
     pub fn deserialize(serialized_note: [Field; OWNED_VALUE_NOTE_LEN]) -> Self {
         Self {
             amount: SafeU120::new(serialized_note[0]),
-            owner: AztecAddress::new(serialized_note[1]),
+            owner: AztecAddress::from_field(serialized_note[1]),
             randomness: serialized_note[2],
             header: NoteHeader::empty(),
         }
@@ -68,7 +69,11 @@ impl OwnedValueNote {
     }
 
     // docs:start:nullifier
-    fn compute_nullifier(self) -> Field {
+    fn compute_nullifier(self, context: &mut PrivateContext) -> Field {
+        self.compute_nullifier_without_context()
+    }
+
+    pub fn compute_nullifier_without_context(self) -> Field {
         let note_hash_for_nullify = compute_note_hash_for_read_or_nullify(OwnedValueNoteMethods, self);
         let nullifier_key = self.randomness;
 
@@ -77,8 +82,8 @@ impl OwnedValueNote {
             nullifier_key,
         ], 0)
     }
-    // docs:end:nullifier
 
+    // docs:end:nullifier
     pub fn set_header(&mut self, header: NoteHeader) {
         self.header = header;
     }
@@ -87,7 +92,7 @@ impl OwnedValueNote {
     pub fn broadcast(self, context: &mut PrivateContext, slot: Field) {
         // We only bother inserting the note if non-empty to save funds on gas.
         if !self.amount.is_zero() {
-            let encryption_pub_key = get_public_key(self.owner.address);
+            let encryption_pub_key = get_public_key(self.owner);
             if (encryption_pub_key.x + encryption_pub_key.y != 0) {
                 emit_encrypted_log(
                     context,
@@ -113,8 +118,12 @@ fn compute_note_hash(note: OwnedValueNote) -> Field {
     note.compute_note_hash()
 }
 
-fn compute_nullifier(note: OwnedValueNote) -> Field {
-    note.compute_nullifier()
+fn compute_nullifier(note: OwnedValueNote, context: &mut PrivateContext) -> Field {
+    note.compute_nullifier(context)
+}
+
+fn compute_nullifier_without_context(note: OwnedValueNote) -> Field {
+    note.compute_nullifier_without_context()
 }
 
 fn get_header(note: OwnedValueNote) -> NoteHeader {
@@ -135,6 +144,7 @@ global OwnedValueNoteMethods = NoteInterface {
     serialize,
     compute_note_hash,
     compute_nullifier,
+    compute_nullifier_without_context,
     get_header,
     set_header,
     broadcast,

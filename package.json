@@ -12,7 +12,7 @@
     "start:sandbox": "SANDBOX_VERSION=0.12.0 /bin/bash -c \"$(curl -fsSL 'https://sandbox.aztec.network')\" ",
     "formatting": "prettier --check ./src && eslint ./src",
     "formatting:fix": "prettier -w ./src",
-    "compile": "aztec-cli compile src/contracts -o './artifacts' -i './artifacts' -ts './artifacts'",
+    "compile": "cd src/contracts && aztec-nargo compile && aztec-cli codegen target -o src/artifacts --nr && aztec-cli codegen target -o src/artifacts --ts",
     "test:integration": "NODE_NO_WARNINGS=1 node --experimental-vm-modules $(yarn bin jest) --runInBand"
   },
   "jest": {
@@ -33,10 +33,10 @@
   },
   "dependencies": {
     "@aztec/aztec-ui": "^0.1.14",
-    "@aztec/aztec.js": "0.16.9",
-    "@aztec/circuits.js": "0.16.9",
-    "@aztec/foundation": "0.16.9",
-    "@aztec/types": "0.16.9",
+    "@aztec/aztec.js": "0.20.0",
+    "@aztec/circuits.js": "0.20.0",
+    "@aztec/foundation": "0.20.0",
+    "@aztec/types": "0.20.0",
     "classnames": "^2.3.2",
     "formik": "^2.4.3",
     "node-sass": "^9.0.0",
@@ -97,5 +97,8 @@
     "src",
     "!*.test.*"
   ],
-  "types": "./dest/index.d.ts"
+  "types": "./dest/index.d.ts",
+  "workspaces": [
+    "src/contracts/"
+  ]
 }
