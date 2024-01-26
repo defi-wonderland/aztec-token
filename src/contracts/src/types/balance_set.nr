@@ -3,10 +3,12 @@ use dep::safe_math::SafeU120;
 use dep::aztec::{
   context::Context,
   state_vars::set::Set,
-  types::address::AztecAddress,
 };
 
-use dep::protocol_types::constants::MAX_READ_REQUESTS_PER_CALL;
+use dep::aztec::protocol_types::{
+    constants::MAX_READ_REQUESTS_PER_CALL,
+    address::AztecAddress,
+};
 
 use dep::aztec::note::{
     note_getter::view_notes,
@@ -20,7 +22,6 @@ use dep::aztec::note::{
 };
 use dep::aztec::oracle::{
     rand::rand,
-    get_secret_key::get_secret_key,
     get_public_key::get_public_key,
 };
 
